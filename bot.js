@@ -12,6 +12,7 @@ const TAG_GROUPS = {
   "#danh": ["-5050272045"],         // hành chính đông anh
   // Gửi đồng thời cả 2 nhóm
   "#hanh": ["-5041062787", "-5050272045"], 
+  "#hanh21": ["-504106278", "-505027204"], 
 };
 
 // Command để kiểm tra chat_id
