@@ -8,8 +8,9 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const TAG_GROUPS = {
   "#sale": "-4728594152",  // chat_id group Sale
   "#tech": "-4841136203",  // chat_id group Tech
-  "#nv": "-4841136205",    // chat_id group NV
-  "#boss": "-4841136206"   // chat_id group Boss
+  "#phi": "-4841136208",    // chat_id group NV
+  "#quan": "-4992675727",  // chat_id group Boss
+  "#phong": "-5068573088"   // chat_id group Boss
 };
 
 // Command để kiểm tra chat_id
