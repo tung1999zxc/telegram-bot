@@ -4,103 +4,134 @@ const { Telegraf } = require('telegraf');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// Cấu hình tag → danh sách chat_id group
+// ========= CẤU HÌNH =========
+
+// Danh sách tag → danh sách chat_id group
 const TAG_GROUPS = {
-  "#st": ["-5045620043"],            // sáng trưa
-  "#t": ["-5071830714"],             // sáng trưa
-  "#nhi": ["-5041062787"],          // hành chính pvd
-  "#danh": ["-5050272045"],         // hành chính đông anh
-  // Gửi đồng thời cả 2 nhóm
-  "#hanh": ["-5041062787", "-5050272045"], 
-  "#hanh21": ["-504106278", "-505027204"], 
+  "#st": ["-5045620043"],                 // sáng trưa
+  "#t": ["-5071830714"],                  // sáng trưa
+  "#nhi": ["-5041062787"],                // hành chính pvd
+  "#danh": ["-5050272045"],               // hành chính đông anh
+"#phong": ["-5068573088"] ,
+  // gửi đồng thời
+  "#hanh": ["-5041062787", "-5050272045"],
+  "#hanh21": ["-504106278", "-505027204"],
 };
 
-// Command để kiểm tra chat_id
+// CHAT ID ADMIN (chỉ admin nhìn thấy thông tin thật)
+const ADMIN_ID = 1696923084;
+
+// Lệnh kiểm tra chat_id
 bot.command("getid", (ctx) => {
-  ctx.reply(`chat_id của bạn là: ${ctx.chat.id}`);
+  ctx.reply(`📌 Chat ID của bạn là: ${ctx.chat.id}`);
 });
 
-// Hàm gửi tin nhắn ẩn danh
-async function sendAnonymously(ctx, groupId, tag, content) {
+// ========= HÀM GỬI ẨN DANH + GỬI RIÊNG ADMIN =========
+
+async function sendToGroups(ctx, tag, content, fileType, fileId) {
+  const sender = ctx.from;
+  const senderInfo =
+    `👤 Người gửi:\n` +
+    `• Name: ${sender.first_name || ""} ${sender.last_name || ""}\n` +
+    `• Username: @${sender.username || "không có"}\n` +
+    `• Chat ID: ${sender.id}`;
+
+  // gửi cho tất cả group
+  for (const groupId of TAG_GROUPS[tag]) {
+    try {
+      // ========== GỬI ẨN DANH CHO GROUP ==========
+      if (fileType === "text") {
+        await ctx.telegram.sendMessage(groupId, `[${tag}] ${content}`);
+      } else if (fileType === "photo") {
+        await ctx.telegram.sendPhoto(groupId, fileId, { caption: `[${tag}] ${content || ""}` });
+      } else if (fileType === "document") {
+        await ctx.telegram.sendDocument(groupId, fileId, { caption: `[${tag}] ${content || ""}` });
+      } else if (fileType === "voice") {
+        await ctx.telegram.sendVoice(groupId, fileId, { caption: `[${tag}] ${content || ""}` });
+      } else if (fileType === "sticker") {
+        await ctx.telegram.sendSticker(groupId, fileId);
+      }
+
+      console.log(`➡️ Gửi ẩn danh vào group ${groupId}`);
+    } catch (err) {
+      console.error(`❌ Lỗi gửi vào group ${groupId}:`, err);
+    }
+  }
+
+  // ========== GỬI THÔNG TIN THẬT CHO ADMIN ==========
   try {
-    await ctx.telegram.sendMessage(
-      groupId,
-      `[${tag}] ${content}`
-    );
-    console.log(`➡️ Forward ẩn danh: ${content} → group ${groupId}`);
+    if (fileType === "text") {
+      await ctx.telegram.sendMessage(ADMIN_ID, `🔍 [${tag}] Tin nhắn gốc:\n${content}\n\n${senderInfo}`);
+    } else if (fileType === "photo") {
+      await ctx.telegram.sendPhoto(ADMIN_ID, fileId, { caption: `🔍 [${tag}] Ảnh gốc\n\n${senderInfo}` });
+    } else if (fileType === "document") {
+      await ctx.telegram.sendDocument(ADMIN_ID, fileId, { caption: `🔍 [${tag}] File gốc\n\n${senderInfo}` });
+    } else if (fileType === "voice") {
+      await ctx.telegram.sendVoice(ADMIN_ID, fileId, { caption: `🔍 [${tag}] Voice gốc\n\n${senderInfo}` });
+    } else if (fileType === "sticker") {
+      await ctx.telegram.sendMessage(ADMIN_ID, `🔍 [${tag}] Sticker từ người gửi\n\n${senderInfo}`);
+      await ctx.telegram.sendSticker(ADMIN_ID, fileId);
+    }
+
+    console.log(`➡️ Gửi thông tin thật cho admin`);
   } catch (err) {
-    console.error("❌ Lỗi khi gửi:", err);
+    console.error("❌ Lỗi gửi cho admin:", err);
   }
 }
 
-// Lắng nghe tất cả tin nhắn
+// ========= LẮNG NGHE TIN NHẮN =========
+
 bot.on("message", async (ctx) => {
   const msg = ctx.message;
-
   const text = msg.text || msg.caption || "";
   const tag = Object.keys(TAG_GROUPS).find(t => text.toLowerCase().includes(t.toLowerCase()));
 
   if (!tag) {
-    ctx.reply("⚠️ Bạn cần thêm tag, ví dụ: #st, #t, #nhi, #hanh...");
+    ctx.reply("⚠️ Bạn cần thêm tag: #st, #t, #nhi, #danh, #hanh...");
     return;
   }
 
-  const targetGroups = TAG_GROUPS[tag]; // luôn là mảng
-
-  // ======= GỬI TEXT =======
+  // ====== TEXT ======
   if (msg.text) {
     const content = msg.text.replace(tag, "").trim();
-    for (const group of targetGroups) {
-      await sendAnonymously(ctx, group, tag, content);
-    }
+    await sendToGroups(ctx, tag, content, "text");
     ctx.reply("✅ Tin nhắn đã gửi ẩn danh.");
     return;
   }
 
-  // ======= GỬI ẢNH =======
+  // ====== ẢNH ======
   if (msg.photo) {
     const photoId = msg.photo[msg.photo.length - 1].file_id;
-    for (const group of targetGroups) {
-      await ctx.telegram.sendPhoto(group, photoId, { caption: `[${tag}] ${msg.caption || ''}` });
-      console.log(`➡️ Forward ảnh → ${group}`);
-    }
+    await sendToGroups(ctx, tag, msg.caption, "photo", photoId);
     ctx.reply("✅ Ảnh đã gửi ẩn danh.");
     return;
   }
 
-  // ======= GỬI FILE =======
+  // ====== FILE ======
   if (msg.document) {
-    for (const group of targetGroups) {
-      await ctx.telegram.sendDocument(group, msg.document.file_id, { caption: `[${tag}] ${msg.caption || ''}` });
-      console.log(`➡️ Forward file → ${group}`);
-    }
+    await sendToGroups(ctx, tag, msg.caption, "document", msg.document.file_id);
     ctx.reply("✅ File đã gửi ẩn danh.");
     return;
   }
 
-  // ======= GỬI STICKER =======
-  if (msg.sticker) {
-    for (const group of targetGroups) {
-      await ctx.telegram.sendSticker(group, msg.sticker.file_id);
-      console.log(`➡️ Forward sticker → ${group}`);
-    }
-    ctx.reply("✅ Sticker đã gửi ẩn danh.");
-    return;
-  }
-
-  // ======= GỬI VOICE =======
+  // ====== VOICE ======
   if (msg.voice) {
-    for (const group of targetGroups) {
-      await ctx.telegram.sendVoice(group, msg.voice.file_id, { caption: `[${tag}] ${msg.caption || ''}` });
-      console.log(`➡️ Forward voice → ${group}`);
-    }
+    await sendToGroups(ctx, tag, msg.caption, "voice", msg.voice.file_id);
     ctx.reply("✅ Voice đã gửi ẩn danh.");
     return;
   }
 
-  // Nếu loại tin nhắn chưa hỗ trợ
+  // ====== STICKER ======
+  if (msg.sticker) {
+    await sendToGroups(ctx, tag, null, "sticker", msg.sticker.file_id);
+    ctx.reply("✅ Sticker đã gửi ẩn danh.");
+    return;
+  }
+
   ctx.reply("⚠️ Loại tin nhắn này chưa được hỗ trợ.");
 });
 
-// Start bot
+// ========= START BOT =========
+
 bot.launch().then(() => console.log("🤖 Bot đang chạy..."));
+
