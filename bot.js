@@ -10,7 +10,7 @@ const TAG_GROUPS = {
   "#tech": "-4841136203",  // chat_id group Tech
    // chat_id group Boss
   "#phong": "-5068573088" ,  // chat_id group Boss
-  "#1": "-4992675727"  , // chat_id group Boss
+  "#quan": "-4992675727"  , // chat_id group Boss
   "#2": "-5068573088",   // chat_id group Boss
   "#3": "-5068573088" ,  // chat_id group Boss
 };
