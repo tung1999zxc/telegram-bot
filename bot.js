@@ -6,11 +6,10 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 
 // Cấu hình tag → danh sách chat_id group
 const TAG_GROUPS = {
-  "#st": ["5045620043"],            // sáng trưa
-  "#t": ["5071830714"],             // sáng trưa
+  "#st": ["-5045620043"],            // sáng trưa
+  "#t": ["-5071830714"],             // sáng trưa
   "#nhi": ["-5041062787"],          // hành chính pvd
   "#danh": ["-5050272045"],         // hành chính đông anh
-
   // Gửi đồng thời cả 2 nhóm
   "#hanh": ["-5041062787", "-5050272045"], 
 };
