@@ -32,7 +32,7 @@ const GROUP_REPLY_MAP = {};
 function parseInput(text) {
   const weightMatch = text.match(/(\d+)\s*g/i);
     const priceMatch = text.match(/(\d+(\.\d+)?)\s*t/i); // 👈 FIX
-  const linkMatch = text.match(/https?:\/\/\S+/);
+  const linkMatch = text.match(/https:\/\/detail\.1688\.com\/\S+/);
 
   if (!weightMatch || !priceMatch || !linkMatch) return null;
 
