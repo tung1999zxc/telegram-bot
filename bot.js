@@ -48,10 +48,10 @@ function parseInput(text) {
 // =========================================================
 function getPriceByWeight(weight, x) {
   if (weight < 300) return 25 * x + 675;
-  if (weight >= 300 && weight < 500) return 25 * x + 775;
-  if (weight >= 500 && weight < 1100) return 25 * x + 1075;
-  if (weight >= 1100 && weight < 2100) return 25 * x + 1575;
-  if (weight >= 2100 && weight <= 3000) return 25 * x + 2075;
+  if (weight >= 300 && weight < 500) return (25 * x + 775)/17;
+  if (weight >= 500 && weight < 1100) return (25 * x + 1075)/17;
+  if (weight >= 1100 && weight < 2100) return (25 * x + 1575)/17;
+  if (weight >= 2100 && weight <= 3000) return (25 * x + 2075)/17;
   return null;
 }
 
