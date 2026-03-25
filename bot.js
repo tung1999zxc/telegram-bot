@@ -47,23 +47,55 @@ function parseInput(text) {
 // CÔNG THỨC
 // =========================================================
 function getPriceByWeight(weight, x) {
-  if (weight < 200) {
-    return Math.round((25 * x + 675) / 17 );
-  } else if (weight < 500) {
-    return Math.round((25 * x + 775) / 17);
-  } else if (weight < 700) {
-    return Math.round((25 * x + 932) / 17);
-  } else if (weight < 999) {
-    return Math.round((25 * x + 1075) / 17);
-  } else if (weight < 1500) {
-    return Math.round((25 * x + 1325) / 17);
-  } else if (weight < 2100) {
-    return Math.round((25 * x + 1575) / 17);
-  } else if (weight <= 3000) {
-    return Math.round((25 * x + 2075) / 17);
+  // Chuyển đổi weight từ gram sang kg để so sánh với bảng (0.1, 0.2, ...)
+  let weightKg = weight / 1000;
+
+  // Công thức gốc trong ảnh là: 25x + (hằng số)
+  // Hằng số bắt đầu từ 625 (tại 0.1kg) và tăng 50 đơn vị cho mỗi 0.1kg
+  
+  let constant = 0;
+
+  if (weightKg <= 0) return null;
+
+  // Tìm hằng số tương ứng dựa trên các mốc 0.1kg
+  // Công thức tổng quát từ ảnh: Hằng số = 625 + (weightKg - 0.1) * 10 * 50
+  // Nhưng để chính xác và dễ kiểm soát, ta dùng các mốc:
+  
+  if (weightKg <= 0.1) constant = 625;
+  else if (weightKg <= 0.2) constant = 675;
+  else if (weightKg <= 0.3) constant = 725;
+  else if (weightKg <= 0.4) constant = 775;
+  else if (weightKg <= 0.5) constant = 825;
+  else if (weightKg <= 0.6) constant = 875;
+  else if (weightKg <= 0.7) constant = 925;
+  else if (weightKg <= 0.8) constant = 975;
+  else if (weightKg <= 0.9) constant = 1025;
+  else if (weightKg <= 1.0) constant = 1075;
+  else if (weightKg <= 1.1) constant = 1125;
+  else if (weightKg <= 1.2) constant = 1175;
+  else if (weightKg <= 1.3) constant = 1225;
+  else if (weightKg <= 1.4) constant = 1275;
+  else if (weightKg <= 1.5) constant = 1325;
+  else if (weightKg <= 1.6) constant = 1375;
+  else if (weightKg <= 1.7) constant = 1425;
+  else if (weightKg <= 1.8) constant = 1475;
+  else if (weightKg <= 1.9) constant = 1525;
+  else if (weightKg <= 2.0) constant = 1575;
+  else if (weightKg <= 2.1) constant = 1625;
+  else if (weightKg <= 2.2) constant = 1675;
+  else if (weightKg <= 2.3) constant = 1725;
+  else if (weightKg <= 2.4) constant = 1775;
+  else if (weightKg <= 2.5) constant = 1825;
+  else if (weightKg <= 2.6) constant = 1875;
+  else if (weightKg <= 2.7) constant = 1925;
+  else if (weightKg <= 2.8) constant = 1975;
+  else {
+    // Nếu vượt quá 2.8kg, bạn có thể thêm logic hoặc trả về null
+    return null; 
   }
 
-  return null;
+  // Trả về kết quả theo công thức (25x + hằng số) / 17
+  return Math.round((25 * x + constant) / 17);
 }
 
 function isSpecialCase(weight, x) {
