@@ -31,7 +31,7 @@ const GROUP_REPLY_MAP = {};
 // =========================================================
 function parseInput(text) {
   const weightMatch = text.match(/(\d+)\s*g/i);
-  const priceMatch = text.match(/(\d+)\s*t/i);
+    const priceMatch = text.match(/(\d+(\.\d+)?)\s*t/i); // 👈 FIX
   const linkMatch = text.match(/https?:\/\/\S+/);
 
   if (!weightMatch || !priceMatch || !linkMatch) return null;
