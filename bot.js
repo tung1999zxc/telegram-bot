@@ -47,13 +47,22 @@ function parseInput(text) {
 // CÔNG THỨC
 // =========================================================
 function getPriceByWeight(weight, x) {
-  if (weight < 300) return 25 * x + 675;
-  if (weight >= 300 && weight < 500) return (25 * x + 775)/17;
-  if (weight >= 500 && weight < 700) return (25 * x + 932)/17;
-  if (weight >= 700 && weight < 1100) return (25 * x + 1075)/17;
-  if (weight >= 1100 && weight < 1500) return (25 * x + 1325)/17;
-  if (weight >= 1500 && weight < 2100) return (25 * x + 1575)/17;
-  if (weight >= 2100 && weight <= 3000) return (25 * x + 2075)/17;
+  if (weight < 300) {
+    return Math.round((25 * x + 675) / 17 );
+  } else if (weight < 500) {
+    return Math.round((25 * x + 775) / 17);
+  } else if (weight < 700) {
+    return Math.round((25 * x + 932) / 17);
+  } else if (weight < 1100) {
+    return Math.round((25 * x + 1075) / 17);
+  } else if (weight < 1500) {
+    return Math.round((25 * x + 1325) / 17);
+  } else if (weight < 2100) {
+    return Math.round((25 * x + 1575) / 17);
+  } else if (weight <= 3000) {
+    return Math.round((25 * x + 2075) / 17);
+  }
+
   return null;
 }
 
