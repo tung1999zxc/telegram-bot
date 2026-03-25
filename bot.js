@@ -332,7 +332,7 @@ const lowerText = text.toLowerCase();
     const data = parseInput(text);
 
     if (!msg.photo) return ctx.reply("❌ Thiếu ảnh");
-    if (!data) return ctx.reply("❌ Sai cú pháp\nVí dụ: #giahqtt 150g 6t https://link");
+    if (!data) return ctx.reply("❌ Sai cú pháp\nVí dụ: #giahq 150g 6t https://detail.1688");
 
     const special = isSpecialCase(data.weight, data.x);
     // Truyền thêm biến isGiaHqtt vào đây
