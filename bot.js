@@ -53,7 +53,7 @@ function getPriceByWeight(weight, x) {
     return Math.round((25 * x + 775) / 17);
   } else if (weight < 700) {
     return Math.round((25 * x + 932) / 17);
-  } else if (weight < 1100) {
+  } else if (weight < 999) {
     return Math.round((25 * x + 1075) / 17);
   } else if (weight < 1500) {
     return Math.round((25 * x + 1325) / 17);
