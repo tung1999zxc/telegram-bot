@@ -17,8 +17,8 @@ const TAG_GROUPS = {
   "#dl": ["-5025654332"],
   "#xinnghi": ["-4985569408"],
   "#baocao": ["-5060706783"],
-  "#gia": ["-5250242593"],
-
+  "#giahq": ["-5250242593"],
+  
   "#hanh": ["-1003469624013", "-1003450550142"],
   "#hanh21": ["-504106278", "-505027204"]
 };
@@ -171,24 +171,58 @@ function isSpecialCase(weight, x) {
     (x < 7 && weight >= 100 && weight <= 200)
   );
 }
+function getConstantHqtt(weightKg) {
+  // Nhóm nhẹ
+  if (weightKg <= 0.4) return 625;
+  if (weightKg <= 1.0) return 650;
+  
+  // Nhóm trung bình (Dựa trên ảnh 2)
+  if (weightKg <= 1.1) return 775;
+  if (weightKg <= 1.2) return 800;
+  if (weightKg <= 1.3) return 825;
+  if (weightKg <= 1.4) return 850;
+  if (weightKg <= 1.5) return 900;
+  if (weightKg <= 1.6) return 950;
+  if (weightKg <= 1.7) return 975;
 
-function calculateCombos(weight, x, isSpecial) {
+  // Nhóm nặng (Dựa trên ảnh 1)
+  if (weightKg <= 1.8) return 1000;
+  if (weightKg <= 1.9) return 1050;
+  if (weightKg <= 3.0) return 1150;
+  if (weightKg <= 3.2) return 1200; // Mốc 3,1 - 3,2
+  if (weightKg <= 3.3) return 1225;
+  if (weightKg <= 3.4) return 1250;
+  if (weightKg <= 3.5) return 1300;
+
+  return null; // Quá 3.5kg
+}
+function calculateCombos(weightPerUnit, x, isSpecial, isHqtt = false) {
   const results = [];
 
   for (let i = 1; i <= 5; i++) {
-    const multiplier = isSpecial ? i * 2 : i;
-    const totalWeight = weight * multiplier;
-    const price = getPriceByWeight(totalWeight, x);
+    const quantity = isSpecial ? i * 2 : i;
+    
+    // 1. Tính tổng cân nặng của cả combo (đã cộng phí đóng gói 100g)
+    const totalWeightGram = (weightPerUnit * quantity) + 100; 
+    
+    let price;
+    if (isHqtt) {
+      // Dùng hàm cho HQTT (tra theo kg)
+      const constant = getConstantHqtt(totalWeightGram / 1000);
+      price = constant ? Math.round((25 * x + constant) / 17) : null;
+    } else {
+      // Dùng hàm cũ của bạn (truyền gram vào)
+      price = getPriceByWeight(totalWeightGram, x);
+    }
 
     if (!price) continue;
 
     results.push({
       label: isSpecial ? `${i}+${i}` : `${i}`,
-      totalWeight,
-      price
+      totalWeight: totalWeightGram, 
+      price: price
     });
   }
-
   return results;
 }
 
@@ -248,7 +282,7 @@ async function sendPriceToGroup(ctx, data, combos, photoId) {
   const fullMessage = form + table;
 
   // gửi group #gia
-  for (const groupId of TAG_GROUPS["#gia"]) {
+  for (const groupId of TAG_GROUPS["#giahq"]) {
     await ctx.telegram.sendPhoto(groupId, photoId, {
       caption: fullMessage
     });
@@ -288,33 +322,29 @@ bot.on("message", async (ctx) => {
   }
 
   const text = msg.caption || msg.text || "";
-
+const lowerText = text.toLowerCase();
   // ================= #gia =================
-  if (text.includes("#gia")) {
+  // Kiểm tra xem là loại giá nào
+  const isGiaNormal = lowerText.includes("#giahq");
+  const isGiaHqtt = lowerText.includes("#giahqtt");
+
+  if (isGiaNormal || isGiaHqtt) {
     const data = parseInput(text);
 
-    if (!msg.photo) {
-      return ctx.reply("❌ Thiếu ảnh");
-    }
-
-    if (!data) {
-      return ctx.reply(
-        "❌ Sai cú pháp\nVí dụ:\n#gia 150g 6t https://link"
-      );
-    }
+    if (!msg.photo) return ctx.reply("❌ Thiếu ảnh");
+    if (!data) return ctx.reply("❌ Sai cú pháp\nVí dụ: #giahqtt 150g 6t https://link");
 
     const special = isSpecialCase(data.weight, data.x);
-    const combos = calculateCombos(data.weight, data.x, special);
+    // Truyền thêm biến isGiaHqtt vào đây
+    const combos = calculateCombos(data.weight, data.x, special, isGiaHqtt);
 
-    if (combos.length === 0) {
-      return ctx.reply("❌ Không tính được giá");
-    }
+    if (combos.length === 0) return ctx.reply("❌ Không tính được giá (Vượt quá cân nặng cho phép)");
 
     const photoId = msg.photo.at(-1).file_id;
-
+    
+    // Gửi phản hồi (tận dụng hàm cũ của bạn)
     await sendPriceToGroup(ctx, data, combos, photoId);
-
-    return ctx.reply("✅ Làm giá thành công");
+    return ctx.reply(`✅ Làm giá ${isGiaHqtt ? "HQTT" : "SP"} thành công`);
   }
 
   // ================= TAG KHÁC =================
@@ -322,7 +352,7 @@ bot.on("message", async (ctx) => {
     text.toLowerCase().includes(t)
   );
 
-  if (!tag || tag === "#gia") return;
+  if (!tag || tag === "#giahq") return;
 
   const cleaned = text.replace(tag, "").trim();
 
