@@ -47,7 +47,7 @@ function parseInput(text) {
 // CÔNG THỨC
 // =========================================================
 function getPriceByWeight(weight, x) {
-  if (weight < 300) {
+  if (weight < 200) {
     return Math.round((25 * x + 675) / 17 );
   } else if (weight < 500) {
     return Math.round((25 * x + 775) / 17);
