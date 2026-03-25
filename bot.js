@@ -281,17 +281,20 @@ async function sendPriceToGroup(ctx, data, combos, photoId) {
   const table = formatTable(combos);
   const fullMessage = form + table;
 
+let sentMessageInfo = [];
   // gửi group #gia
   for (const groupId of TAG_GROUPS["#giahq"]) {
     await ctx.telegram.sendPhoto(groupId, photoId, {
       caption: fullMessage
     });
+    sentMessageInfo.push(m.message_id);
   }
 
   // gửi lại cho user
   await ctx.telegram.sendPhoto(ctx.chat.id, photoId, {
     caption: fullMessage
   });
+  return sentMessageInfo;
 }
 
 // =========================================================
@@ -343,7 +346,13 @@ const lowerText = text.toLowerCase();
     const photoId = msg.photo.at(-1).file_id;
     
     // Gửi phản hồi (tận dụng hàm cũ của bạn)
-    await sendPriceToGroup(ctx, data, combos, photoId);
+   const sentIds = await sendPriceToGroup(ctx, data, combos, photoId);
+    
+    // LƯU VÀO MAP ĐỂ KHI CÓ NGƯỜI REPLY TRONG GROUP THÌ BOT BIẾT GỬI CHO AI
+    sentIds.forEach(id => {
+      GROUP_REPLY_MAP[id] = ctx.from.id;
+    });
+
     return ctx.reply(`✅ Làm giá ${isGiaHqtt ? "HQTT" : "SP"} thành công`);
   }
 
@@ -367,21 +376,47 @@ const lowerText = text.toLowerCase();
 // =========================================================
 // REACTION
 // =========================================================
+
 bot.on("message_reaction", async (ctx) => {
   const data = ctx.update.message_reaction;
-  const msgId = data.message_id;
 
-  const userId = GROUP_REPLY_MAP[msgId];
-  if (!userId) return;
+  const msgId = data.message_id;
+  const originalUserId = GROUP_REPLY_MAP[msgId];
+  if (!originalUserId) return;
 
   const emojis = data.new_reaction.map((r) => r.emoji).join(", ");
 
-  await ctx.telegram.sendMessage(
-    userId,
-    `❤️ Có reaction: ${emojis}`
-  );
+  try {
+    await ctx.telegram.sendMessage(
+      originalUserId,
+      `❤️ Tin nhắn của bạn vừa nhận reaction: ${emojis}`
+    );
+  } catch (err) {
+    console.error("❌ Lỗi gửi reaction:", err);
+  }
 });
 
+// 🟢 Khi tổng số reaction thay đổi
+bot.on("message_reaction_count", async (ctx) => {
+  const data = ctx.update.message_reaction_count;
+
+  const msgId = data.message_id;
+  const originalUserId = GROUP_REPLY_MAP[msgId];
+  if (!originalUserId) return;
+
+  const summary = data.reactions
+    .map((r) => `${r.emoji} (${r.count})`)
+    .join(", ");
+
+  try {
+    await ctx.telegram.sendMessage(
+      originalUserId,
+      `💬 Tin nhắn bạn gửi có reaction: ${summary}`
+    );
+  } catch (err) {
+    console.error("❌ Lỗi gửi reaction count:", err);
+  }
+});
 // =========================================================
 // START
 // =========================================================
