@@ -109,14 +109,14 @@ function formatTable(combos) {
   const col3 = 14; // Cân nặng
 
   let table = "📊 BẢNG GIÁ\n";
-  table += "-".repeat(col1 + col2 + col3 + 4) + "\n";
+  table += "-".repeat(col1 + col2 + col3 ) + "\n";
 
   table +=
     centerText("Combo", col1) + "|" +
     centerText("Giá", col2) + "|" +
     centerText("Cân nặng", col3) + "\n";
 
-  table += "-".repeat(col1 + col2 + col3 + 4) + "\n";
+  table += "-".repeat(col1 + col2 + col3 ) + "\n";
 
   combos.forEach((c) => {
     table +=
@@ -125,7 +125,7 @@ function formatTable(combos) {
       centerText(c.totalWeight + "g", col3) + "\n";
   });
 
-  table += "-".repeat(col1 + col2 + col3 + 4);
+  table += "-".repeat(col1 + col2 + col3 );
 
   return table;
 }
