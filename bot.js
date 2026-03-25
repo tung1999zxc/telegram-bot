@@ -47,54 +47,121 @@ function parseInput(text) {
 // CÔNG THỨC
 // =========================================================
 function getPriceByWeight(weight, x) {
-  // Chuyển đổi weight từ gram sang kg để so sánh với bảng (0.1, 0.2, ...)
+  // weight truyền vào tính bằng gram
   let weightKg = weight / 1000;
-
-  // Công thức gốc trong ảnh là: 25x + (hằng số)
-  // Hằng số bắt đầu từ 625 (tại 0.1kg) và tăng 50 đơn vị cho mỗi 0.1kg
-  
   let constant = 0;
 
   if (weightKg <= 0) return null;
 
-  // Tìm hằng số tương ứng dựa trên các mốc 0.1kg
-  // Công thức tổng quát từ ảnh: Hằng số = 625 + (weightKg - 0.1) * 10 * 50
-  // Nhưng để chính xác và dễ kiểm soát, ta dùng các mốc:
-  
-  if (weightKg <= 0.1) constant = 625;
-  else if (weightKg <= 0.2) constant = 675;
-  else if (weightKg <= 0.3) constant = 725;
-  else if (weightKg <= 0.4) constant = 775;
-  else if (weightKg <= 0.5) constant = 825;
-  else if (weightKg <= 0.6) constant = 875;
-  else if (weightKg <= 0.7) constant = 925;
-  else if (weightKg <= 0.8) constant = 975;
-  else if (weightKg <= 0.9) constant = 1025;
-  else if (weightKg <= 1.0) constant = 1075;
-  else if (weightKg <= 1.1) constant = 1125;
-  else if (weightKg <= 1.2) constant = 1175;
-  else if (weightKg <= 1.3) constant = 1225;
-  else if (weightKg <= 1.4) constant = 1275;
-  else if (weightKg <= 1.5) constant = 1325;
-  else if (weightKg <= 1.6) constant = 1375;
-  else if (weightKg <= 1.7) constant = 1425;
-  else if (weightKg <= 1.8) constant = 1475;
-  else if (weightKg <= 1.9) constant = 1525;
-  else if (weightKg <= 2.0) constant = 1575;
-  else if (weightKg <= 2.1) constant = 1625;
-  else if (weightKg <= 2.2) constant = 1675;
-  else if (weightKg <= 2.3) constant = 1725;
-  else if (weightKg <= 2.4) constant = 1775;
-  else if (weightKg <= 2.5) constant = 1825;
-  else if (weightKg <= 2.6) constant = 1875;
-  else if (weightKg <= 2.7) constant = 1925;
-  else if (weightKg <= 2.8) constant = 1975;
+  // --- NHÓM 0kg - 1kg ---
+  if (weightKg <= 0.03) constant = 590;
+  else if (weightKg <= 0.06) constant = 605;
+  else if (weightKg <= 0.09) constant = 620;
+  else if (weightKg <= 0.12) constant = 635;
+  else if (weightKg <= 0.15) constant = 650;
+  else if (weightKg <= 0.18) constant = 665;
+  else if (weightKg <= 0.21) constant = 680;
+  else if (weightKg <= 0.24) constant = 695;
+  else if (weightKg <= 0.27) constant = 710;
+  else if (weightKg <= 0.30) constant = 725; // Khớp ảnh
+  else if (weightKg <= 0.33) constant = 740;
+  else if (weightKg <= 0.36) constant = 755;
+  else if (weightKg <= 0.39) constant = 770;
+  else if (weightKg <= 0.42) constant = 785;
+  else if (weightKg <= 0.45) constant = 800;
+  else if (weightKg <= 0.48) constant = 815;
+  else if (weightKg <= 0.51) constant = 830;
+  else if (weightKg <= 0.54) constant = 845;
+  else if (weightKg <= 0.57) constant = 860;
+  else if (weightKg <= 0.60) constant = 875; // Khớp ảnh
+  else if (weightKg <= 0.63) constant = 890;
+  else if (weightKg <= 0.66) constant = 905;
+  else if (weightKg <= 0.69) constant = 920;
+  else if (weightKg <= 0.72) constant = 935;
+  else if (weightKg <= 0.75) constant = 950;
+  else if (weightKg <= 0.78) constant = 965;
+  else if (weightKg <= 0.81) constant = 980;
+  else if (weightKg <= 0.84) constant = 995;
+  else if (weightKg <= 0.87) constant = 1010;
+  else if (weightKg <= 0.90) constant = 1025; // Khớp ảnh
+  else if (weightKg <= 0.93) constant = 1040;
+  else if (weightKg <= 0.96) constant = 1055;
+  else if (weightKg <= 1.00) constant = 1075; // Khớp ảnh (Mốc 1kg)
+
+  // --- NHÓM 1kg - 2kg ---
+  else if (weightKg <= 1.03) constant = 1090;
+  else if (weightKg <= 1.06) constant = 1105;
+  else if (weightKg <= 1.09) constant = 1120;
+  else if (weightKg <= 1.12) constant = 1135;
+  else if (weightKg <= 1.15) constant = 1150;
+  else if (weightKg <= 1.18) constant = 1165;
+  else if (weightKg <= 1.21) constant = 1180;
+  else if (weightKg <= 1.24) constant = 1195;
+  else if (weightKg <= 1.27) constant = 1210;
+  else if (weightKg <= 1.30) constant = 1225; // Khớp ảnh
+  else if (weightKg <= 1.33) constant = 1240;
+  else if (weightKg <= 1.36) constant = 1255;
+  else if (weightKg <= 1.39) constant = 1270;
+  else if (weightKg <= 1.42) constant = 1285;
+  else if (weightKg <= 1.45) constant = 1300;
+  else if (weightKg <= 1.48) constant = 1315;
+  else if (weightKg <= 1.51) constant = 1330;
+  else if (weightKg <= 1.54) constant = 1345;
+  else if (weightKg <= 1.57) constant = 1360;
+  else if (weightKg <= 1.60) constant = 1375; // Khớp ảnh
+  else if (weightKg <= 1.63) constant = 1390;
+  else if (weightKg <= 1.66) constant = 1405;
+  else if (weightKg <= 1.69) constant = 1420;
+  else if (weightKg <= 1.72) constant = 1435;
+  else if (weightKg <= 1.75) constant = 1450;
+  else if (weightKg <= 1.78) constant = 1465;
+  else if (weightKg <= 1.81) constant = 1480;
+  else if (weightKg <= 1.84) constant = 1495;
+  else if (weightKg <= 1.87) constant = 1510;
+  else if (weightKg <= 1.90) constant = 1525; // Khớp ảnh
+  else if (weightKg <= 1.93) constant = 1540;
+  else if (weightKg <= 1.96) constant = 1555;
+  else if (weightKg <= 2.00) constant = 1575; // Khớp ảnh (Mốc 2kg)
+
+  // --- NHÓM 2kg - 3kg ---
+  else if (weightKg <= 2.03) constant = 1590;
+  else if (weightKg <= 2.06) constant = 1605;
+  else if (weightKg <= 2.09) constant = 1620;
+  else if (weightKg <= 2.12) constant = 1635;
+  else if (weightKg <= 2.15) constant = 1650;
+  else if (weightKg <= 2.18) constant = 1665;
+  else if (weightKg <= 2.21) constant = 1680;
+  else if (weightKg <= 2.24) constant = 1695;
+  else if (weightKg <= 2.27) constant = 1710;
+  else if (weightKg <= 2.30) constant = 1725; // Khớp ảnh
+  else if (weightKg <= 2.33) constant = 1740;
+  else if (weightKg <= 2.36) constant = 1755;
+  else if (weightKg <= 2.39) constant = 1770;
+  else if (weightKg <= 2.42) constant = 1785;
+  else if (weightKg <= 2.45) constant = 1800;
+  else if (weightKg <= 2.48) constant = 1815;
+  else if (weightKg <= 2.51) constant = 1830;
+  else if (weightKg <= 2.54) constant = 1845;
+  else if (weightKg <= 2.57) constant = 1860;
+  else if (weightKg <= 2.60) constant = 1875; // Khớp ảnh
+  else if (weightKg <= 2.63) constant = 1890;
+  else if (weightKg <= 2.66) constant = 1905;
+  else if (weightKg <= 2.69) constant = 1920;
+  else if (weightKg <= 2.72) constant = 1935;
+  else if (weightKg <= 2.75) constant = 1950;
+  else if (weightKg <= 2.78) constant = 1965;
+  else if (weightKg <= 2.81) constant = 1980;
+  else if (weightKg <= 2.84) constant = 1995;
+  else if (weightKg <= 2.87) constant = 2010;
+  else if (weightKg <= 2.90) constant = 2025;
+  else if (weightKg <= 2.93) constant = 2040;
+  else if (weightKg <= 2.96) constant = 2055;
+  else if (weightKg <= 3.00) constant = 2075; 
   else {
-    // Nếu vượt quá 2.8kg, bạn có thể thêm logic hoặc trả về null
-    return null; 
+    return null; // Vượt quá 3kg
   }
 
-  // Trả về kết quả theo công thức (25x + hằng số) / 17
+  // Trả về kết quả cuối cùng
   return Math.round((25 * x + constant) / 17);
 }
 
