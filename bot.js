@@ -268,13 +268,13 @@ function formatTable(combos) {
 // =========================================================
 // GỬI GIÁ (HIỆN TÊN + LINK CLICK)
 // =========================================================
-async function sendPriceToGroup(ctx, data, combos, photoId) {
+async function sendPriceToGroup(ctx, data, combos, photoId,tag) {
   const sender = ctx.from;
   const senderName =
     `${sender.first_name || ""} ${sender.last_name || ""}`.trim();
 
   const form =
-    
+    `🏷 Tag: ${tag.toUpperCase()}\n` +
     `👤 Người gửi: ${senderName} (@${sender.username || "no_user"})\n` +
     `🔗 Link: ${data.link}\n` +
     `⚖️ Cân nặng: ${data.weight}g\n` +
@@ -436,6 +436,7 @@ bot.on("message", async (ctx) => {
   const isGiaHqtt = lowerText.includes("#giahqtt");
 
   if (isGiaNormal || isGiaHqtt) {
+    const currentTag = isGiaHqtt ? "#giahqtt" : "#giahq";
     const data = parseInput(text);
 
     if (!msg.photo) return ctx.reply("❌ Thiếu ảnh");
@@ -449,7 +450,7 @@ bot.on("message", async (ctx) => {
     const photoId = msg.photo.at(-1).file_id;
     
     // Gọi hàm gửi vào group giahq
-    const sentIds = await sendPriceToGroup(ctx, data, combos, photoId);
+    const sentIds = await sendPriceToGroup(ctx, data, combos, photoId,currentTag);
     
     // Lưu vào map để nhận reply
     if (sentIds && Array.isArray(sentIds)) {
