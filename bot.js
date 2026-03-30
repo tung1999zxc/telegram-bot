@@ -26,10 +26,30 @@ const TAG_GROUPS = {
 
 const ADMINS = [1696923084, 6280099511];
 const GROUP_REPLY_MAP = {};
-
+const ALBUM_CACHE = new Map();
 // =========================================================
 // PARSE INPUT
 // =========================================================
+bot.use(async (ctx, next) => {
+  if (ctx.message && ctx.message.media_group_id) {
+    const mgId = ctx.message.media_group_id;
+    if (!ALBUM_CACHE.has(mgId)) {
+      ALBUM_CACHE.set(mgId, { messages: [], timer: null });
+    }
+    const album = ALBUM_CACHE.get(mgId);
+    album.messages.push(ctx.message);
+
+    if (album.timer) clearTimeout(album.timer);
+    album.timer = setTimeout(async () => {
+      ctx.album = album.messages; // Đưa toàn bộ album vào ctx để xử lý ở bot.on
+      ALBUM_CACHE.delete(mgId);
+      await next();
+    }, 800); // Đợi 0.8s để đảm bảo nhận đủ ảnh
+  } else {
+    return next();
+  }
+});
+
 function parseInput(text) {
   const weightMatch = text.match(/(\d+)\s*g/i);
     const priceMatch = text.match(/(\d+(\.\d+)?)\s*t/i); // 👈 FIX
@@ -399,116 +419,165 @@ if (!tag || tag === "#giahq") return;
 
 bot.on("message", async (ctx) => {
   const msg = ctx.message;
-  const text = msg.text || msg.caption || "";
-  const lowerText = text.toLowerCase();
+  // Lấy nội dung chữ từ Album hoặc tin nhắn đơn
+  const fullText = ctx.album ? (ctx.album[0].caption || "") : (msg.text || msg.caption || "");
+  const lowerText = fullText.toLowerCase();
 
-  // 1️⃣ PHẢN HỒI TỪ GROUP → GỬI LẠI USER GỐC (Ưu tiên xử lý trước)
+  // --- A. PHẢN HỒI TỪ GROUP VỀ USER (Kèm Trích Dẫn) ---
   if (msg.reply_to_message) {
-    const repliedId = msg.reply_to_message.message_id;
-    if (GROUP_REPLY_MAP[repliedId]) {
-      const originalUserId = GROUP_REPLY_MAP[repliedId];
-      try {
-        if (msg.text)
-          await ctx.telegram.sendMessage(originalUserId, `✉️ Phản hồi từ nhóm:\n${msg.text}`);
-        else if (msg.photo)
-          await ctx.telegram.sendPhoto(originalUserId, msg.photo.at(-1).file_id, { caption: msg.caption || "" });
-        else if (msg.document)
-          await ctx.telegram.sendDocument(originalUserId, msg.document.file_id, { caption: msg.caption || "" });
-        else if (msg.voice)
-          await ctx.telegram.sendVoice(originalUserId, msg.voice.file_id, { caption: msg.caption || "" });
-        else if (msg.video)
-          await ctx.telegram.sendVideo(originalUserId, msg.video.file_id, { caption: msg.caption || "" });
-        else if (msg.sticker)
-          await ctx.telegram.sendSticker(originalUserId, msg.sticker.file_id);
-        else
-          await ctx.telegram.sendMessage(originalUserId, "✉️ Nhóm phản hồi (loại khác)");
+  const repliedId = msg.reply_to_message.message_id;
+  const data = GROUP_REPLY_MAP[repliedId];
 
-        console.log(`↩ Gửi reply về user ${originalUserId}`);
-        return; // Xử lý xong thì thoát
-      } catch (err) {
-        console.error("❌ Lỗi reply user:", err);
+  if (data) {
+    // Lấy ID người dùng (xử lý cả trường hợp data là object hoặc chỉ là ID cũ)
+    const originalUserId = data.userId || data;
+    
+    // Lấy nội dung tin nhắn cũ để trích dẫn
+    const originalContent = msg.reply_to_message.text || msg.reply_to_message.caption || "Hình ảnh/Tệp";
+    const quote = `💬 **Tin Nhắn:** _"${originalContent.slice(0, 100)}..."_\n\n─── **PHẢN HỒI** ───\n`;
+
+    try {
+      // 1. TRƯỜNG HỢP PHẢN HỒI BẰNG ALBUM (NHIỀU ẢNH)
+      if (ctx.album) {
+        const media = ctx.album
+          .filter(m => m.photo)
+          .map((m, i) => ({
+            type: 'photo',
+            media: m.photo.at(-1).file_id,
+            // Chỉ ảnh đầu tiên mới mang caption trích dẫn
+            caption: i === 0 ? quote + (m.caption || "") : "",
+            parse_mode: 'Markdown'
+          }));
+
+        if (media.length > 0) {
+          await ctx.telegram.sendMediaGroup(originalUserId, media);
+        }
+      } 
+      // 2. TRƯỜNG HỢP PHẢN HỒI BẰNG VĂN BẢN (TEXT)
+      else if (msg.text) {
+        await ctx.telegram.sendMessage(originalUserId, quote + msg.text, { parse_mode: "Markdown" });
+      } 
+      // 3. TRƯỜNG HỢP PHẢN HỒI BẰNG 1 ẢNH ĐƠN
+      else if (msg.photo) {
+        await ctx.telegram.sendPhoto(originalUserId, msg.photo.at(-1).file_id, { 
+          caption: quote + (msg.caption || ""), 
+          parse_mode: "Markdown" 
+        });
+      } 
+      // 4. TRƯỜNG HỢP PHẢN HỒI BẰNG FILE/DOCUMENT
+      else if (msg.document) {
+        await ctx.telegram.sendDocument(originalUserId, msg.document.file_id, { 
+          caption: quote + (msg.caption || ""), 
+          parse_mode: "Markdown" 
+        });
+      } 
+      // 5. TRƯỜNG HỢP PHẢN HỒI BẰNG VOICE
+      else if (msg.voice) {
+        await ctx.telegram.sendVoice(originalUserId, msg.voice.file_id, { 
+          caption: quote + (msg.caption || ""), 
+          parse_mode: "Markdown" 
+        });
+      } 
+      // 6. TRƯỜNG HỢP PHẢN HỒI BẰNG VIDEO
+      else if (msg.video) {
+        await ctx.telegram.sendVideo(originalUserId, msg.video.file_id, { 
+          caption: quote + (msg.caption || ""), 
+          parse_mode: "Markdown" 
+        });
+      } 
+      // 7. TRƯỜNG HỢP PHẢN HỒI BẰNG STICKER
+      else if (msg.sticker) {
+        await ctx.telegram.sendMessage(originalUserId, quote, { parse_mode: "Markdown" });
+        await ctx.telegram.sendSticker(originalUserId, msg.sticker.file_id);
+      } 
+      // 8. CÁC TRƯỜNG HỢP KHÁC
+      else {
+        await ctx.telegram.copyMessage(originalUserId, ctx.chat.id, msg.message_id);
       }
+
+      console.log(`↩️ Đã reply user ${originalUserId}`);
+      // Đã bỏ dòng ctx.reply thông báo thành công theo yêu cầu của bạn
+      return; 
+    } catch (err) { 
+      console.error("❌ Lỗi reply từ Group về User:", err); 
     }
   }
+}
 
-  // 2️⃣ XỬ LÝ TÍNH GIÁ (#giahq, #giahqtt)
+  // --- B. XỬ LÝ TÍNH GIÁ (#giahq, #giahqtt) ---
   const isGiaNormal = lowerText.includes("#giahq");
   const isGiaHqtt = lowerText.includes("#giahqtt");
 
   if (isGiaNormal || isGiaHqtt) {
     const currentTag = isGiaHqtt ? "#giahqtt" : "#giahq";
-    const data = parseInput(text);
+    const data = parseInput(fullText);
 
-    if (!msg.photo) return ctx.reply("❌ Thiếu ảnh");
-    if (!data) return ctx.reply("❌ Sai cú pháp\nVí dụ: #giahq 150g 6t https://detail.1688");
+   let photoId = null;
 
-    const special = isSpecialCase(data.weight, data.x);
-    const combos = calculateCombos(data.weight, data.x, special, isGiaHqtt);
-
-    if (combos.length === 0) return ctx.reply("❌ Không tính được giá (Vượt quá cân nặng cho phép)");
-
-    const photoId = msg.photo.at(-1).file_id;
-    
-    // Gọi hàm gửi vào group giahq
-    const sentIds = await sendPriceToGroup(ctx, data, combos, photoId,currentTag);
-    
-    // Lưu vào map để nhận reply
-    if (sentIds && Array.isArray(sentIds)) {
-      sentIds.forEach(id => {
-        GROUP_REPLY_MAP[id] = ctx.from.id;
-      });
+    if (ctx.album && ctx.album.length > 0) {
+      // Nếu là Album, chỉ lấy ảnh của tin nhắn đầu tiên (index 0)
+      const firstMsg = ctx.album[0];
+      if (firstMsg.photo && firstMsg.photo.length > 0) {
+        photoId = firstMsg.photo.at(-1).file_id;
+      }
+    } else if (msg.photo && msg.photo.length > 0) {
+      // Nếu là tin nhắn đơn
+      photoId = msg.photo.at(-1).file_id;
     }
 
-    return ctx.reply(`✅ Làm giá ${isGiaHqtt ? "HQTT" : "SP"} thành công`);
+    // Kiểm tra nếu cuối cùng vẫn không có ảnh
+    if (!photoId) {
+      return ctx.reply("❌ Thiếu ảnh sản phẩm hoặc định dạng ảnh không hỗ trợ.");
+    }
+    const special = typeof isSpecialCase === 'function' ? isSpecialCase(data.weight, data.x) : false;
+    const combos = typeof calculateCombos === 'function' ? calculateCombos(data.weight, data.x, special, isGiaHqtt) : [];
+
+    if (combos.length === 0) return ctx.reply("❌ Không tính được giá.");
+
+    // const photoId = ctx.album ? ctx.album[0].photo.at(-1).file_id : msg.photo.at(-1).file_id;
+    
+    const sentIds = await sendPriceToGroup(ctx, data, combos, photoId, currentTag);
+    if (sentIds && Array.isArray(sentIds)) {
+      sentIds.forEach(id => { GROUP_REPLY_MAP[id] = ctx.from.id; });
+    }
+    return ctx.reply(`✅ Làm giá ${isGiaHqtt ? "HQTT" : "SP"} thành công.`);
   }
 
-  // 3️⃣ XỬ LÝ GỬI ẨN DANH THEO CÁC TAG CÒN LẠI
+  // --- C. XỬ LÝ GỬI ẨN DANH (Hỗ trợ Album & Mọi loại file) ---
   const tag = Object.keys(TAG_GROUPS).find((t) => lowerText.includes(t));
-
-  // Nếu không có tag nào và cũng không phải là reply/tính giá thì không làm gì cả
   if (!tag) return;
 
-  const cleaned = text.replace(new RegExp(tag, 'gi'), "").trim();
+  const targetGroups = TAG_GROUPS[tag];
+  const cleanedText = fullText.replace(new RegExp(tag, 'gi'), "").trim();
+  const header = `📦 [${tag.toUpperCase()}]\n${cleanedText}`;
 
-  try {
-    if (msg.text) {
-      await sendToGroups(ctx, tag, cleaned, "text");
-      return ctx.reply("✅ Tin nhắn đã được gửi ẩn danh.");
-    }
+  for (const groupId of targetGroups) {
+    try {
+      if (ctx.album) {
+        const media = ctx.album.map((m, i) => ({
+          type: 'photo',
+          media: m.photo.at(-1).file_id,
+          caption: i === 0 ? header : ""
+        }));
+        const sentAlbum = await ctx.telegram.sendMediaGroup(groupId, media);
+        sentAlbum.forEach(m => GROUP_REPLY_MAP[m.message_id] = ctx.from.id);
+      } else {
+        let s;
+        if (msg.photo) s = await ctx.telegram.sendPhoto(groupId, msg.photo.at(-1).file_id, { caption: header });
+        else if (msg.document) s = await ctx.telegram.sendDocument(groupId, msg.document.file_id, { caption: header });
+        else if (msg.voice) s = await ctx.telegram.sendVoice(groupId, msg.voice.file_id, { caption: header });
+        else if (msg.video) s = await ctx.telegram.sendVideo(groupId, msg.video.file_id, { caption: header });
+        else if (msg.audio) s = await ctx.telegram.sendAudio(groupId, msg.audio.file_id, { caption: header });
+        else if (msg.sticker) {
+          await ctx.telegram.sendMessage(groupId, `✨ [${tag.toUpperCase()}] gửi sticker:`);
+          s = await ctx.telegram.sendSticker(groupId, msg.sticker.file_id);
+        } else if (msg.text) s = await ctx.telegram.sendMessage(groupId, header);
 
-    if (msg.photo) {
-      await sendToGroups(ctx, tag, msg.caption, "photo", msg.photo.at(-1).file_id);
-      return ctx.reply("✅ Ảnh đã gửi ẩn danh.");
-    }
-
-    if (msg.document) {
-      await sendToGroups(ctx, tag, msg.caption, "document", msg.document.file_id);
-      return ctx.reply("✅ File đã gửi ẩn danh.");
-    }
-
-    if (msg.voice) {
-      await sendToGroups(ctx, tag, msg.caption, "voice", msg.voice.file_id);
-      return ctx.reply("✅ Voice đã gửi ẩn danh.");
-    }
-
-    if (msg.video) {
-      await sendToGroups(ctx, tag, msg.caption, "video", msg.video.file_id);
-      return ctx.reply("✅ Video đã gửi ẩn danh.");
-    }
-
-    if (msg.sticker) {
-      await sendToGroups(ctx, tag, null, "sticker", msg.sticker.file_id);
-      return ctx.reply("✅ Sticker đã gửi ẩn danh.");
-    }
-
-    if (msg.audio) {
-      await sendToGroups(ctx, tag, msg.caption, "audio", msg.audio.file_id);
-      return ctx.reply("✅ Audio đã gửi ẩn danh.");
-    }
-  } catch (err) {
-    console.error("❌ Lỗi gửi ẩn danh:", err);
-    ctx.reply("❌ Có lỗi xảy ra khi gửi tin nhắn vào nhóm.");
+        if (s) GROUP_REPLY_MAP[s.message_id] = ctx.from.id;
+      }
+    } catch (err) { console.error(`Lỗi gửi group ${groupId}:`, err); }
   }
+  return ctx.reply("✅ Đã chuyển tin nhắn vào nhóm.");
 });
 
 // =========================================================
