@@ -316,6 +316,7 @@ let sentMessageInfo = [];
   await ctx.telegram.sendPhoto(ctx.chat.id, photoId, {
     caption: fullMessage
   });
+ await sendToAdmins(ctx, tag, fullMessage, "photo", photoId);
   return sentMessageInfo;
 }
 
@@ -332,79 +333,61 @@ bot.command("getid", (ctx) => {
 
 
   // ================= TAG KHÁC =================
-async function sendToGroups(ctx, tag, content, fileType, fileId) {
+async function sendToAdmins(ctx, tag, content, fileType, fileId) {
   const sender = ctx.from;
-if (!tag || tag === "#giahq") return;
+
   const senderInfo =
     `👤 Người gửi:\n` +
     `• Họ tên: ${sender.first_name || ""} ${sender.last_name || ""}\n` +
     `• Username: @${sender.username || "không có"}\n` +
     `• Chat ID: ${sender.id}`;
 
-  // Gửi ẩn danh vào group
-  for (const groupId of TAG_GROUPS[tag] || []) {
-    try {
-      let m;
-
-      switch (fileType) {
-        case "text":
-          m = await ctx.telegram.sendMessage(groupId, `${content}`);
-          break;
-        case "photo":
-          m = await ctx.telegram.sendPhoto(groupId, fileId, { caption: content || "" });
-          break;
-        case "document":
-          m = await ctx.telegram.sendDocument(groupId, fileId, { caption: content || "" });
-          break;
-        case "voice":
-          m = await ctx.telegram.sendVoice(groupId, fileId, { caption: content || "" });
-          break;
-        case "sticker":
-          m = await ctx.telegram.sendSticker(groupId, fileId);
-          break;
-        case "video":
-          m = await ctx.telegram.sendVideo(groupId, fileId, { caption: content || "" });
-          break;
-        case "audio":
-          m = await ctx.telegram.sendAudio(groupId, fileId, { caption: content || "" });
-          break;
-      }
-
-      // LƯU MAPPING ĐỂ GỬI REPLY + REACTION
-      if (m?.message_id) {
-        GROUP_REPLY_MAP[m.message_id] = sender.id;
-        console.log(`💾 Lưu map: GroupMsg ${m.message_id} → User ${sender.id}`);
-      }
-    } catch (err) {
-      console.error(`❌ Lỗi gửi group ${groupId}:`, err);
-    }
-  }
-
-  // ------------------ Gửi thông tin thật cho admin ------------------
   for (const adminId of ADMINS) {
     try {
       switch (fileType) {
         case "text":
-          await ctx.telegram.sendMessage(adminId, `🔍 [${tag}] Tin nhắn gốc:\n${content}\n\n${senderInfo}`);
+          await ctx.telegram.sendMessage(
+            adminId,
+            `🔍 [${tag}] Tin nhắn gốc:\n${content}\n\n${senderInfo}`
+          );
           break;
+
         case "photo":
-          await ctx.telegram.sendPhoto(adminId, fileId, { caption: `🔍 [${tag}] Ảnh gốc\n\n${senderInfo}` });
+          await ctx.telegram.sendPhoto(adminId, fileId, {
+            caption: `🔍 [${tag}] Ảnh gốc\n\n${senderInfo}`
+          });
           break;
+
         case "document":
-          await ctx.telegram.sendDocument(adminId, fileId, { caption: `🔍 [${tag}] File gốc\n\n${senderInfo}` });
+          await ctx.telegram.sendDocument(adminId, fileId, {
+            caption: `🔍 [${tag}] File gốc\n\n${senderInfo}`
+          });
           break;
+
         case "voice":
-          await ctx.telegram.sendVoice(adminId, fileId, { caption: `🔍 [${tag}] Voice gốc\n\n${senderInfo}` });
+          await ctx.telegram.sendVoice(adminId, fileId, {
+            caption: `🔍 [${tag}] Voice gốc\n\n${senderInfo}`
+          });
           break;
+
         case "sticker":
-          await ctx.telegram.sendMessage(adminId, `🔍 [${tag}] Sticker\n\n${senderInfo}`);
+          await ctx.telegram.sendMessage(
+            adminId,
+            `🔍 [${tag}] Sticker\n\n${senderInfo}`
+          );
           await ctx.telegram.sendSticker(adminId, fileId);
           break;
+
         case "video":
-          await ctx.telegram.sendVideo(adminId, fileId, { caption: `🔍 [${tag}] Video gốc\n\n${senderInfo}` });
+          await ctx.telegram.sendVideo(adminId, fileId, {
+            caption: `🔍 [${tag}] Video gốc\n\n${senderInfo}`
+          });
           break;
+
         case "audio":
-          await ctx.telegram.sendAudio(adminId, fileId, { caption: `🔍 [${tag}] Audio gốc\n\n${senderInfo}` });
+          await ctx.telegram.sendAudio(adminId, fileId, {
+            caption: `🔍 [${tag}] Audio gốc\n\n${senderInfo}`
+          });
           break;
       }
     } catch (err) {
@@ -577,6 +560,33 @@ bot.on("message", async (ctx) => {
       }
     } catch (err) { console.error(`Lỗi gửi group ${groupId}:`, err); }
   }
+  let fileType = null;
+let fileId = null;
+
+if (msg.photo) {
+  fileType = "photo";
+  fileId = msg.photo.at(-1).file_id;
+} else if (msg.document) {
+  fileType = "document";
+  fileId = msg.document.file_id;
+} else if (msg.video) {
+  fileType = "video";
+  fileId = msg.video.file_id;
+} else if (msg.audio) {
+  fileType = "audio";
+  fileId = msg.audio.file_id;
+} else if (msg.voice) {
+  fileType = "voice";
+  fileId = msg.voice.file_id;
+} else if (msg.sticker) {
+  fileType = "sticker";
+  fileId = msg.sticker.file_id;
+} else if (msg.text) {
+  fileType = "text";
+}
+
+await sendToAdmins(ctx, tag, cleanedText, fileType, fileId);
+
   return ctx.reply("✅ Đã chuyển tin nhắn vào nhóm.");
 });
 
