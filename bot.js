@@ -417,7 +417,7 @@ bot.on("message", async (ctx) => {
     
     // Lấy nội dung tin nhắn cũ để trích dẫn
     const originalContent = msg.reply_to_message.text || msg.reply_to_message.caption || "Hình ảnh/Tệp";
-    const quote = `💬 **Tin Nhắn:** _"${originalContent.slice(0, 100)}..."_\n\n─── **PHẢN HỒI** ───\n`;
+    const quote = `💬 **Tin Nhắn:** _"${originalContent.slice(0, 200)}..."_\n\n─── **PHẢN HỒI** ───\n`;
 
     try {
       // 1. TRƯỜNG HỢP PHẢN HỒI BẰNG ALBUM (NHIỀU ẢNH)
