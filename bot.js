@@ -28,7 +28,7 @@ const TAG_GROUPS = {
   "#hanh21": ["-504106278", "-505027204"]
 };
 
-const ADMINS = [1696923084, 6280099511];
+const ADMINS = [1696923084];
 const GROUP_REPLY_MAP = {};
 const ALBUM_CACHE = new Map();
 // =========================================================
@@ -292,11 +292,10 @@ function formatTable(combos) {
 // =========================================================
 // GỬI GIÁ (HIỆN TÊN + LINK CLICK)
 // =========================================================
-async function sendPriceToGroup(ctx, data, combos, photoId,tag) {
+async function sendPriceToGroup(ctx, data, combos, album, tag) {
   const sender = ctx.from;
-  const senderName =
-    `${sender.first_name || ""} ${sender.last_name || ""}`.trim();
-
+  const senderName = `${sender.first_name || ""} ${sender.last_name || ""}`.trim();
+  const userId = sender.id;
   const form =
     `🏷 Tag: ${tag.toUpperCase()}\n` +
     `👤 Người gửi: ${senderName} (@${sender.username || "no_user"})\n` +
@@ -307,21 +306,38 @@ async function sendPriceToGroup(ctx, data, combos, photoId,tag) {
   const table = formatTable(combos);
   const fullMessage = form + table;
 
-let sentMessageInfo = [];
-  // gửi group #gia
+  const mediaGroup = album.map((m, i) => ({
+    type: 'photo',
+    media: m.photo.at(-1).file_id,
+    caption: i === 0 ? fullMessage : "", // Chỉ chèn bảng giá vào ảnh đầu tiên
+    parse_mode: 'Markdown'
+  }));
+
+  // Đổi tên đồng nhất thành một mảng cố định
+  let sentMessageIds = []; 
+
+  // 1. Gửi vào các group trong TAG_GROUPS["#giahq"]
   for (const groupId of TAG_GROUPS["#giahq"]) {
-   const m = await ctx.telegram.sendPhoto(groupId, photoId, {
-      caption: fullMessage
-    });
-    sentMessageInfo.push(m.message_id);
+    try {
+      const msgs = await ctx.telegram.sendMediaGroup(groupId, mediaGroup);
+      // ✅ Đã sửa: Push đúng vào mảng sentMessageIds
+      msgs.forEach(m => sentMessageIds.push(m.message_id)); 
+    } catch (e) { 
+     
+      console.error("❌ Lỗi gửi album bảng giá vào Group ", e); 
+    }
   }
 
-  // gửi lại cho user
-  await ctx.telegram.sendPhoto(ctx.chat.id, photoId, {
-    caption: fullMessage
-  });
- await sendToAdmins(ctx, tag, fullMessage, "photo", photoId);
-  return sentMessageInfo;
+  try {
+    await ctx.telegram.sendMediaGroup(userId, mediaGroup);
+  } catch (e) {
+    console.error("❌ Lỗi gửi bảng giá về cho User (Có thể chưa start bot hoặc block):", e);
+  }
+
+  await sendToAdmins(ctx, tag, fullMessage, "photo", album[0].photo.at(-1).file_id);
+  
+  // ✅ Đã sửa: Return đúng mảng sentMessageIds
+  return sentMessageIds; 
 }
 
 // =========================================================
@@ -481,13 +497,17 @@ bot.on("message", async (ctx) => {
       else {
         await ctx.telegram.copyMessage(originalUserId, ctx.chat.id, msg.message_id);
       }
-
+// --- THÊM LẠI THÔNG BÁO THÀNH CÔNG TẠI ĐÂY ---
+        await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
+          reply_to_message_id: msg.message_id
+        });
       console.log(`↩️ Đã reply user ${originalUserId}`);
       // Đã bỏ dòng ctx.reply thông báo thành công theo yêu cầu của bạn
       return; 
     } catch (err) { 
-      console.error("❌ Lỗi reply từ Group về User:", err); 
-    }
+        console.error("❌ Lỗi reply từ Group về User:", err);
+        await ctx.reply("❌ Lỗi! Chưa gửi được tin nhắn cho người dùng này.");
+      }
   }
 }
 
@@ -496,9 +516,14 @@ bot.on("message", async (ctx) => {
   const isGiaHqtt = lowerText.includes("#giahqtt");
 
   if (isGiaNormal || isGiaHqtt) {
+    if (!ctx.album || ctx.album.length < 2) {
+      return ctx.reply("❌ Để tính giá sản phẩm, bạn bắt buộc phải gửi kèm đúng 2 ảnh.");
+    }
     const currentTag = isGiaHqtt ? "#giahqtt" : "#giahq";
     const data = parseInput(fullText);
-
+if (!data) {
+  return ctx.reply("❌ Sai định dạng tin nhắn! Vui lòng nhập đủ số gram (g), giá tệ (t) và link 1688.");
+}
    let photoId = null;
 
     if (ctx.album && ctx.album.length > 0) {
@@ -523,7 +548,7 @@ bot.on("message", async (ctx) => {
 
     // const photoId = ctx.album ? ctx.album[0].photo.at(-1).file_id : msg.photo.at(-1).file_id;
     
-    const sentIds = await sendPriceToGroup(ctx, data, combos, photoId, currentTag);
+    const sentIds = await sendPriceToGroup(ctx, data, combos, ctx.album, currentTag);
     if (sentIds && Array.isArray(sentIds)) {
       sentIds.forEach(id => { GROUP_REPLY_MAP[id] = ctx.from.id; });
     }
