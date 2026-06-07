@@ -28,7 +28,7 @@ const TAG_GROUPS = {
   "#hanh21": ["-504106278", "-505027204"]
 };
 
-const ADMINS = [1696923084, 6280099511];
+const ADMINS = [1696923084,6280099511];
 const GROUP_REPLY_MAP = {};
 const ALBUM_CACHE = new Map();
 // =========================================================
@@ -292,7 +292,7 @@ function formatTable(combos) {
 // =========================================================
 // GỬI GIÁ (HIỆN TÊN + LINK CLICK)
 // =========================================================
-async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
+async function sendPriceToGroup(ctx, data, combos, photoId,tag) {
   const sender = ctx.from;
   const senderName =
     `${sender.first_name || ""} ${sender.last_name || ""}`.trim();
@@ -307,13 +307,7 @@ async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
   const table = formatTable(combos);
   const fullMessage = form + table;
 
-  // ✅ BƯỚC FIX: Định nghĩa danh sách ảnh (Lấy từ ctx.album nếu gửi nhiều ảnh, hoặc tự tạo mảng nếu gửi 1 ảnh)
-  const currentAlbum = ctx.album && ctx.album.length > 0 
-    ? ctx.album 
-    : [{ photo: [{ file_id: photoId }] }];
-
-  // ✅ Giữ nguyên logic map ảnh của bạn, đổi từ 'album' thành 'currentAlbum' vừa tạo ở trên
-  const mediaGroup = currentAlbum.map((m, i) => ({
+const mediaGroup = album.map((m, i) => ({
     type: 'photo',
     media: m.photo.at(-1).file_id,
     caption: i === 0 ? fullMessage : "", // Chỉ chèn bảng giá vào ảnh đầu tiên
@@ -332,17 +326,13 @@ async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
   }
 
   // gửi lại cho user
-  try {
-    await ctx.telegram.sendPhoto(ctx.chat.id, photoId, {
-      caption: fullMessage
-    });
-  } catch (e) { console.error("Lỗi gửi photo cho user:", e); }
-
-  await sendToAdmins(ctx, tag, fullMessage, "photo", photoId);
-
-  // ✅ BƯỚC FIX 2: Sửa tên biến return từ 'sentMessageInfo' thành 'sentMessageIds' để không bị báo lỗi crash ngầm ở dòng cuối cùng
-  return sentMessageIds;
+  await ctx.telegram.sendPhoto(ctx.chat.id, photoId, {
+    caption: fullMessage
+  });
+ await sendToAdmins(ctx, tag, fullMessage, "photo", photoId);
+  return sentMessageInfo;
 }
+
 // =========================================================
 // GET ID
 // =========================================================
