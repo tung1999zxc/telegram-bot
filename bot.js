@@ -28,7 +28,7 @@ const TAG_GROUPS = {
   "#hanh21": ["-504106278", "-505027204"]
 };
 
-const ADMINS = [1696923084,6280099511];
+const ADMINS = [1696923084, 6280099511];
 const GROUP_REPLY_MAP = {};
 const ALBUM_CACHE = new Map();
 // =========================================================
@@ -294,7 +294,8 @@ function formatTable(combos) {
 // =========================================================
 async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
   const sender = ctx.from;
-  const senderName = `${sender.first_name || ""} ${sender.last_name || ""}`.trim();
+  const senderName =
+    `${sender.first_name || ""} ${sender.last_name || ""}`.trim();
 
   const form =
     `🏷 Tag: ${tag.toUpperCase()}\n` +
@@ -306,24 +307,18 @@ async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
   const table = formatTable(combos);
   const fullMessage = form + table;
 
-  // ✅ SỬA LỖI 1: Định nghĩa mediaGroup an toàn (Xử lý được cho cả 1 ảnh hoặc nhiều ảnh làm giá)
-  let mediaGroup = [];
-  if (ctx.album && ctx.album.length > 0) {
-    mediaGroup = ctx.album.map((m, i) => ({
-      type: 'photo',
-      media: m.photo.at(-1).file_id,
-      caption: i === 0 ? fullMessage : "", 
-      parse_mode: 'Markdown'
-    }));
-  } else {
-    // Nếu chỉ có 1 ảnh đơn
-    mediaGroup = [{
-      type: 'photo',
-      media: photoId,
-      caption: fullMessage,
-      parse_mode: 'Markdown'
-    }];
-  }
+  // ✅ BƯỚC FIX: Định nghĩa danh sách ảnh (Lấy từ ctx.album nếu gửi nhiều ảnh, hoặc tự tạo mảng nếu gửi 1 ảnh)
+  const currentAlbum = ctx.album && ctx.album.length > 0 
+    ? ctx.album 
+    : [{ photo: [{ file_id: photoId }] }];
+
+  // ✅ Giữ nguyên logic map ảnh của bạn, đổi từ 'album' thành 'currentAlbum' vừa tạo ở trên
+  const mediaGroup = currentAlbum.map((m, i) => ({
+    type: 'photo',
+    media: m.photo.at(-1).file_id,
+    caption: i === 0 ? fullMessage : "", // Chỉ chèn bảng giá vào ảnh đầu tiên
+    parse_mode: 'Markdown'
+  }));
 
   let sentMessageIds = [];
 
@@ -331,31 +326,23 @@ async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
   for (const groupId of TAG_GROUPS["#giahq"]) {
     try {
       const msgs = await ctx.telegram.sendMediaGroup(groupId, mediaGroup);
-      if (msgs && msgs.length > 0) {
-        sentMessageIds.push(msgs[0].message_id);
-      }
-    } catch (e) { 
-      console.error("❌ Lỗi gửi group gia:", e); 
-    }
+      // Lưu lại message_id của ảnh đầu tiên để phục vụ việc Reply sau này
+      sentMessageIds.push(msgs[0].message_id);
+    } catch (e) { console.error("Lỗi gửi group gia:", e); }
   }
 
-  // 2. Gửi trả lại bảng giá cho chính người gửi (Chat riêng hoặc trong nhóm họ gọi bot)
+  // gửi lại cho user
   try {
     await ctx.telegram.sendPhoto(ctx.chat.id, photoId, {
-      caption: fullMessage,
-      parse_mode: 'Markdown'
+      caption: fullMessage
     });
-  } catch (e) {
-    console.error("❌ Lỗi gửi trả ảnh cho user:", e);
-  }
+  } catch (e) { console.error("Lỗi gửi photo cho user:", e); }
 
-  // 3. Báo cáo cho Admin
   await sendToAdmins(ctx, tag, fullMessage, "photo", photoId);
-  
-  // ✅ SỬA LỖI 2: Trả về đúng biến `sentMessageIds` để map tính năng reply
-  return sentMessageIds; 
-}
 
+  // ✅ BƯỚC FIX 2: Sửa tên biến return từ 'sentMessageInfo' thành 'sentMessageIds' để không bị báo lỗi crash ngầm ở dòng cuối cùng
+  return sentMessageIds;
+}
 // =========================================================
 // GET ID
 // =========================================================
@@ -514,7 +501,7 @@ bot.on("message", async (ctx) => {
         await ctx.telegram.copyMessage(originalUserId, ctx.chat.id, msg.message_id);
       }
 // --- THÊM LẠI THÔNG BÁO THÀNH CÔNG TẠI ĐÂY ---
-        await ctx.reply(`✅ Đã gửi phản hồi đến người dùng)`, {
+        await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
           reply_to_message_id: msg.message_id
         });
       console.log(`↩️ Đã reply user ${originalUserId}`);
