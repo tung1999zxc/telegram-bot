@@ -307,22 +307,13 @@ async function sendPriceToGroup(ctx, data, combos, photoId,tag) {
   const table = formatTable(combos);
   const fullMessage = form + table;
 
-const mediaGroup = album.map((m, i) => ({
-    type: 'photo',
-    media: m.photo.at(-1).file_id,
-    caption: i === 0 ? fullMessage : "", // Chỉ chèn bảng giá vào ảnh đầu tiên
-    parse_mode: 'Markdown'
-  }));
-
-  let sentMessageIds = [];
-
-  // 1. Gửi vào các group trong TAG_GROUPS["#giahq"]
+let sentMessageInfo = [];
+  // gửi group #gia
   for (const groupId of TAG_GROUPS["#giahq"]) {
-    try {
-      const msgs = await ctx.telegram.sendMediaGroup(groupId, mediaGroup);
-      // Lưu lại message_id của ảnh đầu tiên để phục vụ việc Reply sau này
-      sentMessageIds.push(msgs[0].message_id);
-    } catch (e) { console.error("Lỗi gửi group gia:", e); }
+   const m = await ctx.telegram.sendPhoto(groupId, photoId, {
+      caption: fullMessage
+    });
+    sentMessageInfo.push(m.message_id);
   }
 
   // gửi lại cho user
@@ -490,17 +481,16 @@ bot.on("message", async (ctx) => {
       else {
         await ctx.telegram.copyMessage(originalUserId, ctx.chat.id, msg.message_id);
       }
-// --- THÊM LẠI THÔNG BÁO THÀNH CÔNG TẠI ĐÂY ---
-        await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
+await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
           reply_to_message_id: msg.message_id
         });
       console.log(`↩️ Đã reply user ${originalUserId}`);
       // Đã bỏ dòng ctx.reply thông báo thành công theo yêu cầu của bạn
       return; 
     } catch (err) { 
-        console.error("❌ Lỗi reply từ Group về User:", err);
+       console.error("❌ Lỗi reply từ Group về User:", err);
         await ctx.reply("❌ Lỗi! Chưa gửi được tin nhắn cho người dùng này.");
-      }
+    }
   }
 }
 
