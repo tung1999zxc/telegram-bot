@@ -28,7 +28,7 @@ const TAG_GROUPS = {
   "#hanh21": ["-504106278", "-505027204"]
 };
 
-const ADMINS = [1696923084];
+const ADMINS = [1696923084,6280099511];
 const GROUP_REPLY_MAP = {};
 const ALBUM_CACHE = new Map();
 // =========================================================
@@ -292,10 +292,10 @@ function formatTable(combos) {
 // =========================================================
 // GỬI GIÁ (HIỆN TÊN + LINK CLICK)
 // =========================================================
-async function sendPriceToGroup(ctx, data, combos, album, tag) {
+async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
   const sender = ctx.from;
   const senderName = `${sender.first_name || ""} ${sender.last_name || ""}`.trim();
-  const userId = sender.id;
+
   const form =
     `🏷 Tag: ${tag.toUpperCase()}\n` +
     `👤 Người gửi: ${senderName} (@${sender.username || "no_user"})\n` +
@@ -306,37 +306,53 @@ async function sendPriceToGroup(ctx, data, combos, album, tag) {
   const table = formatTable(combos);
   const fullMessage = form + table;
 
-  const mediaGroup = album.map((m, i) => ({
-    type: 'photo',
-    media: m.photo.at(-1).file_id,
-    caption: i === 0 ? fullMessage : "", // Chỉ chèn bảng giá vào ảnh đầu tiên
-    parse_mode: 'Markdown'
-  }));
+  // ✅ SỬA LỖI 1: Định nghĩa mediaGroup an toàn (Xử lý được cho cả 1 ảnh hoặc nhiều ảnh làm giá)
+  let mediaGroup = [];
+  if (ctx.album && ctx.album.length > 0) {
+    mediaGroup = ctx.album.map((m, i) => ({
+      type: 'photo',
+      media: m.photo.at(-1).file_id,
+      caption: i === 0 ? fullMessage : "", 
+      parse_mode: 'Markdown'
+    }));
+  } else {
+    // Nếu chỉ có 1 ảnh đơn
+    mediaGroup = [{
+      type: 'photo',
+      media: photoId,
+      caption: fullMessage,
+      parse_mode: 'Markdown'
+    }];
+  }
 
-  // Đổi tên đồng nhất thành một mảng cố định
-  let sentMessageIds = []; 
+  let sentMessageIds = [];
 
   // 1. Gửi vào các group trong TAG_GROUPS["#giahq"]
   for (const groupId of TAG_GROUPS["#giahq"]) {
     try {
       const msgs = await ctx.telegram.sendMediaGroup(groupId, mediaGroup);
-      // ✅ Đã sửa: Push đúng vào mảng sentMessageIds
-      msgs.forEach(m => sentMessageIds.push(m.message_id)); 
+      if (msgs && msgs.length > 0) {
+        sentMessageIds.push(msgs[0].message_id);
+      }
     } catch (e) { 
-     
-      console.error("❌ Lỗi gửi album bảng giá vào Group ", e); 
+      console.error("❌ Lỗi gửi group gia:", e); 
     }
   }
 
+  // 2. Gửi trả lại bảng giá cho chính người gửi (Chat riêng hoặc trong nhóm họ gọi bot)
   try {
-    await ctx.telegram.sendMediaGroup(userId, mediaGroup);
+    await ctx.telegram.sendPhoto(ctx.chat.id, photoId, {
+      caption: fullMessage,
+      parse_mode: 'Markdown'
+    });
   } catch (e) {
-    console.error("❌ Lỗi gửi bảng giá về cho User (Có thể chưa start bot hoặc block):", e);
+    console.error("❌ Lỗi gửi trả ảnh cho user:", e);
   }
 
-  await sendToAdmins(ctx, tag, fullMessage, "photo", album[0].photo.at(-1).file_id);
+  // 3. Báo cáo cho Admin
+  await sendToAdmins(ctx, tag, fullMessage, "photo", photoId);
   
-  // ✅ Đã sửa: Return đúng mảng sentMessageIds
+  // ✅ SỬA LỖI 2: Trả về đúng biến `sentMessageIds` để map tính năng reply
   return sentMessageIds; 
 }
 
@@ -498,7 +514,7 @@ bot.on("message", async (ctx) => {
         await ctx.telegram.copyMessage(originalUserId, ctx.chat.id, msg.message_id);
       }
 // --- THÊM LẠI THÔNG BÁO THÀNH CÔNG TẠI ĐÂY ---
-        await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
+        await ctx.reply(`✅ Đã gửi phản hồi đến người dùng)`, {
           reply_to_message_id: msg.message_id
         });
       console.log(`↩️ Đã reply user ${originalUserId}`);
@@ -516,14 +532,9 @@ bot.on("message", async (ctx) => {
   const isGiaHqtt = lowerText.includes("#giahqtt");
 
   if (isGiaNormal || isGiaHqtt) {
-    if (!ctx.album || ctx.album.length < 2) {
-      return ctx.reply("❌ Để tính giá sản phẩm, bạn bắt buộc phải gửi kèm đúng 2 ảnh.");
-    }
     const currentTag = isGiaHqtt ? "#giahqtt" : "#giahq";
     const data = parseInput(fullText);
-if (!data) {
-  return ctx.reply("❌ Sai định dạng tin nhắn! Vui lòng nhập đủ số gram (g), giá tệ (t) và link 1688.");
-}
+
    let photoId = null;
 
     if (ctx.album && ctx.album.length > 0) {
@@ -548,7 +559,7 @@ if (!data) {
 
     // const photoId = ctx.album ? ctx.album[0].photo.at(-1).file_id : msg.photo.at(-1).file_id;
     
-    const sentIds = await sendPriceToGroup(ctx, data, combos, ctx.album, currentTag);
+    const sentIds = await sendPriceToGroup(ctx, data, combos, photoId, currentTag);
     if (sentIds && Array.isArray(sentIds)) {
       sentIds.forEach(id => { GROUP_REPLY_MAP[id] = ctx.from.id; });
     }
