@@ -28,7 +28,7 @@ const TAG_GROUPS = {
   "#hanh21": ["-504106278", "-505027204"]
 };
 
-const ADMINS = [1696923084,6280099511];
+const ADMINS = [1696923084, 6280099511];
 const GROUP_REPLY_MAP = {};
 const ALBUM_CACHE = new Map();
 // =========================================================
@@ -488,8 +488,8 @@ await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
       // Đã bỏ dòng ctx.reply thông báo thành công theo yêu cầu của bạn
       return; 
     } catch (err) { 
-       console.error("❌ Lỗi reply từ Group về User:", err);
-        await ctx.reply("❌ Lỗi! Chưa gửi được tin nhắn cho người dùng này.");
+      console.error("❌ Lỗi reply từ Group về User:", err); 
+      await ctx.reply("❌ Lỗi! Chưa gửi được tin nhắn cho người dùng này.");
     }
   }
 }
