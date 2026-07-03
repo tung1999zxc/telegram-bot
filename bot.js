@@ -29,8 +29,10 @@ const TAG_GROUPS = {
 };
 
 const ADMINS = [1696923084, 6280099511];
-const GROUP_REPLY_MAP = {};
+
 const ALBUM_CACHE = new Map();
+const GROUP_REPLY_MAP = {};
+const GROUP_REPLY_INFO = {};
 // =========================================================
 // PARSE INPUT
 // =========================================================
@@ -411,85 +413,123 @@ bot.on("message", async (ctx) => {
   const lowerText = fullText.toLowerCase();
 
   // --- A. PHẢN HỒI TỪ GROUP VỀ USER (Kèm Trích Dẫn) ---
-  if (msg.reply_to_message) {
+if (msg.reply_to_message) {
   const repliedId = msg.reply_to_message.message_id;
   const data = GROUP_REPLY_MAP[repliedId];
-
+const info = GROUP_REPLY_INFO[repliedId]; 
   if (data) {
-    // Lấy ID người dùng (xử lý cả trường hợp data là object hoặc chỉ là ID cũ)
+    // Lấy ID người dùng
     const originalUserId = data.userId || data;
-    
+
+    // Lấy thông tin người nhận nếu data là object
+    const receiverName = data.name || data.fullName || data.username || "Không rõ tên";
+    const receiverInfo = data.label || `${receiverName} - ID: ${originalUserId}`;
+
+    // Escape HTML để tránh lỗi email/link/ký tự đặc biệt
+    const escapeHtml = (text = "") =>
+      String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
     // Lấy nội dung tin nhắn cũ để trích dẫn
-    const originalContent = msg.reply_to_message.text || msg.reply_to_message.caption || "Hình ảnh/Tệp";
-    const quote = `💬 **Tin Nhắn:** _"${originalContent.slice(0, 200)}..."_\n\n─── **PHẢN HỒI** ───\n`;
+    const originalContent =
+      msg.reply_to_message.text ||
+      msg.reply_to_message.caption ||
+      "Hình ảnh/Tệp";
+
+    const quote =
+      `💬 <b>Tin Nhắn:</b> <i>"${escapeHtml(originalContent.slice(0, 200))}..."</i>\n\n` +
+      `─── <b>PHẢN HỒI</b> ───\n`;
 
     try {
       // 1. TRƯỜNG HỢP PHẢN HỒI BẰNG ALBUM (NHIỀU ẢNH)
       if (ctx.album) {
         const media = ctx.album
-          .filter(m => m.photo)
+          .filter((m) => m.photo)
           .map((m, i) => ({
-            type: 'photo',
+            type: "photo",
             media: m.photo.at(-1).file_id,
             // Chỉ ảnh đầu tiên mới mang caption trích dẫn
-            caption: i === 0 ? quote + (m.caption || "") : "",
-            parse_mode: 'Markdown'
+            caption: i === 0 ? quote + escapeHtml(m.caption || "") : "",
+            parse_mode: "HTML",
           }));
 
         if (media.length > 0) {
           await ctx.telegram.sendMediaGroup(originalUserId, media);
         }
-      } 
+      }
       // 2. TRƯỜNG HỢP PHẢN HỒI BẰNG VĂN BẢN (TEXT)
       else if (msg.text) {
-        await ctx.telegram.sendMessage(originalUserId, quote + msg.text, { parse_mode: "Markdown" });
-      } 
+        await ctx.telegram.sendMessage(
+          originalUserId,
+          quote + escapeHtml(msg.text),
+          {
+            parse_mode: "HTML",
+            disable_web_page_preview: true,
+          }
+        );
+      }
       // 3. TRƯỜNG HỢP PHẢN HỒI BẰNG 1 ẢNH ĐƠN
       else if (msg.photo) {
-        await ctx.telegram.sendPhoto(originalUserId, msg.photo.at(-1).file_id, { 
-          caption: quote + (msg.caption || ""), 
-          parse_mode: "Markdown" 
+        await ctx.telegram.sendPhoto(originalUserId, msg.photo.at(-1).file_id, {
+          caption: quote + escapeHtml(msg.caption || ""),
+          parse_mode: "HTML",
         });
-      } 
+      }
       // 4. TRƯỜNG HỢP PHẢN HỒI BẰNG FILE/DOCUMENT
       else if (msg.document) {
-        await ctx.telegram.sendDocument(originalUserId, msg.document.file_id, { 
-          caption: quote + (msg.caption || ""), 
-          parse_mode: "Markdown" 
+        await ctx.telegram.sendDocument(originalUserId, msg.document.file_id, {
+          caption: quote + escapeHtml(msg.caption || ""),
+          parse_mode: "HTML",
         });
-      } 
+      }
       // 5. TRƯỜNG HỢP PHẢN HỒI BẰNG VOICE
       else if (msg.voice) {
-        await ctx.telegram.sendVoice(originalUserId, msg.voice.file_id, { 
-          caption: quote + (msg.caption || ""), 
-          parse_mode: "Markdown" 
+        await ctx.telegram.sendVoice(originalUserId, msg.voice.file_id, {
+          caption: quote + escapeHtml(msg.caption || ""),
+          parse_mode: "HTML",
         });
-      } 
+      }
       // 6. TRƯỜNG HỢP PHẢN HỒI BẰNG VIDEO
       else if (msg.video) {
-        await ctx.telegram.sendVideo(originalUserId, msg.video.file_id, { 
-          caption: quote + (msg.caption || ""), 
-          parse_mode: "Markdown" 
+        await ctx.telegram.sendVideo(originalUserId, msg.video.file_id, {
+          caption: quote + escapeHtml(msg.caption || ""),
+          parse_mode: "HTML",
         });
-      } 
+      }
       // 7. TRƯỜNG HỢP PHẢN HỒI BẰNG STICKER
       else if (msg.sticker) {
-        await ctx.telegram.sendMessage(originalUserId, quote, { parse_mode: "Markdown" });
+        await ctx.telegram.sendMessage(originalUserId, quote, {
+          parse_mode: "HTML",
+        });
         await ctx.telegram.sendSticker(originalUserId, msg.sticker.file_id);
-      } 
+      }
       // 8. CÁC TRƯỜNG HỢP KHÁC
       else {
         await ctx.telegram.copyMessage(originalUserId, ctx.chat.id, msg.message_id);
       }
-await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
-          reply_to_message_id: msg.message_id
-        });
+
+      await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
+        reply_to_message_id: msg.message_id,
+      });
+
       console.log(`↩️ Đã reply user ${originalUserId}`);
-      // Đã bỏ dòng ctx.reply thông báo thành công theo yêu cầu của bạn
-      return; 
-    } catch (err) { 
-      console.error("❌ Lỗi reply từ Group về User:", err); 
-      await ctx.reply("❌ Lỗi! Chưa gửi được tin nhắn cho người dùng này.");
+      return;
+    } catch (err) {
+      console.error("❌ Lỗi reply từ Group về User:", err);
+ const receiver =
+    info
+      ? `${info.name} (${info.username})`
+      : `ID: ${originalUserId}`;
+      await ctx.reply(
+        `❌ Lỗi! Chưa gửi được tin nhắn cho người dùng này.\n👤 Người nhận: ${receiver}`,
+        {
+          reply_to_message_id: msg.message_id,
+        }
+      );
+
+      return;
     }
   }
 }
@@ -527,9 +567,15 @@ await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
     // const photoId = ctx.album ? ctx.album[0].photo.at(-1).file_id : msg.photo.at(-1).file_id;
     
     const sentIds = await sendPriceToGroup(ctx, data, combos, photoId, currentTag);
-    if (sentIds && Array.isArray(sentIds)) {
-      sentIds.forEach(id => { GROUP_REPLY_MAP[id] = ctx.from.id; });
-    }
+  sentIds.forEach(id => {
+    GROUP_REPLY_MAP[id] = ctx.from.id;
+
+    GROUP_REPLY_INFO[id] = {
+        name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim(),
+        username: ctx.from.username ? `@${ctx.from.username}` : "không có username",
+        id: ctx.from.id,
+    };
+});
     return ctx.reply(`✅ Làm giá ${isGiaHqtt ? "HQTT" : "SP"} thành công.`);
   }
 
@@ -550,7 +596,16 @@ await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
           caption: i === 0 ? header : ""
         }));
         const sentAlbum = await ctx.telegram.sendMediaGroup(groupId, media);
-        sentAlbum.forEach(m => GROUP_REPLY_MAP[m.message_id] = ctx.from.id);
+        sentAlbum.forEach(m => {
+          GROUP_REPLY_MAP[m.message_id] = ctx.from.id;
+           GROUP_REPLY_INFO[m.message_id] = {
+        name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim(),
+        username: ctx.from.username ? `@${ctx.from.username}` : "không có username",
+        id: ctx.from.id,
+    };
+  }
+        );
+        
       } else {
         let s;
         if (msg.photo) s = await ctx.telegram.sendPhoto(groupId, msg.photo.at(-1).file_id, { caption: header });
@@ -563,7 +618,14 @@ await ctx.reply(`✅ Đã gửi phản hồi đến người dùng`, {
           s = await ctx.telegram.sendSticker(groupId, msg.sticker.file_id);
         } else if (msg.text) s = await ctx.telegram.sendMessage(groupId, header);
 
-        if (s) GROUP_REPLY_MAP[s.message_id] = ctx.from.id;
+       if (s) {
+  GROUP_REPLY_MAP[s.message_id] = ctx.from.id;
+
+  GROUP_REPLY_INFO[s.message_id] = {
+    name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim(),
+    username: ctx.from.username ? `@${ctx.from.username}` : "không có username",
+    id: ctx.from.id,
+  };}
       }
     } catch (err) { console.error(`Lỗi gửi group ${groupId}:`, err); }
   }
