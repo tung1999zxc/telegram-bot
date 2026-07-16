@@ -9,23 +9,17 @@ const bot = new Telegraf(process.env.BOT_TOKEN);
 const TAG_GROUPS = {
   "#st": ["-1003132769814"],
   "#t": ["-1003316340895"],
-  "#nhi": ["-1003469624013"],
-  "#danh": ["-1003450550142"],
-  "#phong": ["-1003026738578"],
+  "#hanh": ["-1003469624013", "-1003450550142"],
   "#cn": ["-1003223915676"],
-  "#hq": ["-1003374674088"],
-  "#dl": ["-5025654332"],
   "#xinnghi": ["-4985569408"],
   "#baocao": ["-5060706783"],
   "#giahq": ["-5250242593"],
+  "#giahqtt": ["-5250242593"],
   "#hoihq": ["-1003788218121"],
-  "#nhaphan": ["-1003991743197"],
-  "#nhapviet": ["-1003991743197"],
-  "#nhapdai": ["-1003991743197"],
   "#hoisp": ["-1003855173449"],
   
-  "#hanh": ["-1003469624013", "-1003450550142"],
-  "#hanh21": ["-504106278", "-505027204"]
+  
+
 };
 
 const ADMINS = [1696923084, 6280099511];
@@ -33,6 +27,7 @@ const ADMINS = [1696923084, 6280099511];
 const ALBUM_CACHE = new Map();
 const GROUP_REPLY_MAP = {};
 const GROUP_REPLY_INFO = {};
+const PENDING_TAG_MAP = {}; // Lưu tag đang chờ xử lý theo user
 // =========================================================
 // PARSE INPUT
 // =========================================================
@@ -327,6 +322,120 @@ let sentMessageInfo = [];
 }
 
 // =========================================================
+// HÀM GỬI MENU TAGS
+// =========================================================
+async function sendTagsMenu(ctx) {
+  const tags = Object.keys(TAG_GROUPS);
+  
+  // Chia tags thành các hàng, mỗi hàng tối đa 3 button
+  const rows = [];
+  for (let i = 0; i < tags.length; i += 3) {
+    const row = tags.slice(i, i + 3).map(tag => ({
+      text: tag,
+      callback_data: `tag_${tag}`
+    }));
+    rows.push(row);
+  }
+
+  const keyboard = {
+    inline_keyboard: rows
+  };
+
+  await ctx.reply(
+    "🏷️ <b>CHỌN TAG</b>\n\nNhấn vào tag bên dưới để chèn vào tin nhắn:",
+    {
+      parse_mode: "HTML",
+      reply_markup: keyboard
+    }
+  );
+}
+
+// =========================================================
+// MENU TAG - HIỂN THỊ BUTTON CHỌN TAG
+// =========================================================
+bot.command(["tags", "tag", "menu"], async (ctx) => {
+  await sendTagsMenu(ctx);
+});
+
+// =========================================================
+// START - MENU CHÍNH
+// =========================================================
+bot.command("start", async (ctx) => {
+  await ctx.reply(
+    "🤖 <b>Chào bạn!</b>\n\n" +
+    "Bot hỗ trợ chuyển tin nhắn ẩn danh vào các nhóm với tag.\n\n" +
+    "📌 <b>Hướng dẫn:</b>\n" +
+    "1️⃣ Nhấn nút <b>🏷️ Chọn Tag</b> bên dưới\n" +
+    "2️⃣ Chọn tag cần dùng\n" +
+    "3️⃣ Gửi ảnh/tin nhắn - bot sẽ tự thêm tag\n\n" +
+    "⚡ Hoặc gõ trực tiếp: <code>#st</code> kèm tin nhắn",
+    {
+      parse_mode: "HTML",
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🏷️ Chọn Tag", callback_data: "show_tags" }]
+        ]
+      }
+    }
+  );
+});
+
+// Xử lý khi nhấn nút "Chọn Tag" trong menu
+bot.on("callback_query", async (ctx) => {
+  const data = ctx.callbackQuery.data;
+  
+  // Nút hiện menu tags
+  if (data === "show_tags") {
+    try {
+      await ctx.answerCallbackQuery();
+    } catch (e) {}
+    
+    await ctx.deleteMessage().catch(() => {});
+    await sendTagsMenu(ctx);
+    return;
+  }
+  
+  // Xử lý khi nhấn button tag
+  if (data && data.startsWith("tag_")) {
+    const tag = data.replace("tag_", "");
+    const tagUpper = tag.toUpperCase();
+    const userId = ctx.from.id;
+    
+    // Lưu tag đang chờ xử lý cho user này (có thời hạn 5 phút)
+    PENDING_TAG_MAP[userId] = {
+      tag: tag,
+      time: Date.now()
+    };
+    
+    // Trả về tag đã chọn cho người dùng (bỏ alert để tránh lỗi)
+    try {
+      await ctx.answerCallbackQuery(`Đã chọn: ${tagUpper}`);
+    } catch (e) {
+      // Bỏ qua lỗi answer callback
+    }
+    
+    // Xóa message menu tags
+    try {
+      await ctx.deleteMessage();
+    } catch (e) {
+      // Không xóa được thì thôi
+    }
+    
+    // Gửi thông báo hướng dẫn
+    await ctx.reply(
+      `🏷️ <b>${tagUpper}</b> - Đã chọn!\n\n` +
+      `Bây giờ gửi ảnh/tin nhắn muốn chuyển, tôi sẽ tự thêm tag "${tag}" vào.`,
+      { parse_mode: "HTML" }
+    );
+    
+    return;
+  }
+  
+  // Trả lời callback query khác (nếu có)
+  await ctx.answerCallbackQuery();
+});
+
+// =========================================================
 // GET ID
 // =========================================================
 bot.command("getid", (ctx) => {
@@ -408,10 +517,45 @@ async function sendToAdmins(ctx, tag, content, fileType, fileId) {
 
 bot.on("message", async (ctx) => {
   const msg = ctx.message;
+  const userId = ctx.from.id;
+  
   // Lấy nội dung chữ từ Album hoặc tin nhắn đơn
-  const fullText = ctx.album ? (ctx.album[0].caption || "") : (msg.text || msg.caption || "");
-  const lowerText = fullText.toLowerCase();
-
+  let captionText = ctx.album ? (ctx.album[0].caption || "") : (msg.text || msg.caption || "");
+  
+  // Kiểm tra nếu user đã chọn tag trước đó
+  const pendingData = PENDING_TAG_MAP[userId];
+  
+  // Nếu có pending tag và còn hạn (5 phút) và tin nhắn KHÔNG chứa tag nào
+  if (pendingData && Date.now() - pendingData.time < 5 * 60 * 1000) {
+    const lowerText = captionText.toLowerCase();
+    const hasAnyTag = Object.keys(TAG_GROUPS).some(t => lowerText.includes(t));
+    
+    if (!hasAnyTag) {
+      const pendingTag = pendingData.tag;
+      
+      // Xóa tag đang chờ
+      delete PENDING_TAG_MAP[userId];
+      
+      // Thêm tag vào đầu caption
+      captionText = `${pendingTag} ${captionText}`;
+      
+      // Cập nhật lại caption cho album nếu có
+      if (ctx.album && ctx.album[0]) {
+        ctx.album[0].caption = captionText;
+      }
+      
+      console.log(`[TAG] Đã thêm tag ${pendingTag} vào tin nhắn của user ${userId}`);
+    }
+  }
+  
+  const lowerText = captionText.toLowerCase();
+  
+  // Kiểm tra xem có phải là tin nhắn chỉ có ảnh không (không có text/caption)
+  const isMediaOnly = !captionText.trim() && (msg.photo || msg.document || msg.video || msg.audio || msg.voice || msg.sticker);
+  
+  // Nếu không có tag trong tin nhắn VÀ có pending tag thì đã xử lý ở trên
+  // Nếu không có tag và không phải media thì có thể là tin nhắn thường không cần tag
+  
   // --- A. PHẢN HỒI TỪ GROUP VỀ USER (Kèm Trích Dẫn) ---
 if (msg.reply_to_message) {
   const repliedId = msg.reply_to_message.message_id;
@@ -540,7 +684,7 @@ const info = GROUP_REPLY_INFO[repliedId];
 
   if (isGiaNormal || isGiaHqtt) {
     const currentTag = isGiaHqtt ? "#giahqtt" : "#giahq";
-    const data = parseInput(fullText);
+    const data = parseInput(captionText);
 
    let photoId = null;
 
@@ -580,11 +724,16 @@ const info = GROUP_REPLY_INFO[repliedId];
   }
 
   // --- C. XỬ LÝ GỬI ẨN DANH (Hỗ trợ Album & Mọi loại file) ---
-  const tag = Object.keys(TAG_GROUPS).find((t) => lowerText.includes(t));
-  if (!tag) return;
-
+  // Tìm tag trong tin nhắn
+  const foundTag = Object.keys(TAG_GROUPS).find((t) => lowerText.includes(t));
+  if (!foundTag) {
+    // Không có tag, không làm gì
+    return;
+  }
+  
+  const tag = foundTag;
   const targetGroups = TAG_GROUPS[tag];
-  const cleanedText = fullText.replace(new RegExp(tag, 'gi'), "").trim();
+  const cleanedText = captionText.replace(new RegExp(tag, 'gi'), "").trim();
   const header = `📦 [${tag.toUpperCase()}]\n${cleanedText}`;
 
   for (const groupId of targetGroups) {
@@ -656,7 +805,7 @@ if (msg.photo) {
 
 await sendToAdmins(ctx, tag, cleanedText, fileType, fileId);
 
-  return ctx.reply("✅ Đã chuyển tin nhắn vào nhóm.");
+  return ctx.reply("✅ Đã chuyển tin nhắn vào nhóm.").then(() => sendTagsMenu(ctx));
 });
 
 // =========================================================
