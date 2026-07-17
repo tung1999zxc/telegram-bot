@@ -776,7 +776,18 @@ bot.on("message", async (ctx) => {
   const tag = foundTag;
   const targetGroups = TAG_GROUPS[tag];
   const cleanedText = captionText.replace(new RegExp(tag, "gi"), "").trim();
-  const header = `📦 [${tag.toUpperCase()}]\n${cleanedText}`;
+
+  // Xác định header: #xinAds thì hiện tên người gửi, nhóm khác thì ẩn danh
+  const isXinAds = tag.toLowerCase() === "#xinads";
+  const senderName = `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim();
+  const senderUsername = ctx.from.username ? `@${ctx.from.username}` : "không có username";
+
+  let header;
+  if (isXinAds) {
+    header = `📦 [${tag.toUpperCase()}]\n👤 ${senderName} (${senderUsername})\n\n${cleanedText}`;
+  } else {
+    header = `📦 [${tag.toUpperCase()}]\n${cleanedText}`;
+  }
 
   for (const groupId of targetGroups) {
     try {
@@ -820,10 +831,10 @@ bot.on("message", async (ctx) => {
             caption: header,
           });
         else if (msg.sticker) {
-          await ctx.telegram.sendMessage(
-            groupId,
-            `✨ [${tag.toUpperCase()}] gửi sticker:`,
-          );
+          const stickerHeader = isXinAds
+            ? `✨ [${tag.toUpperCase()}] ${senderName} (${senderUsername}) gửi sticker:`
+            : `✨ [${tag.toUpperCase()}] gửi sticker:`;
+          await ctx.telegram.sendMessage(groupId, stickerHeader);
           s = await ctx.telegram.sendSticker(groupId, msg.sticker.file_id);
         } else if (msg.text)
           s = await ctx.telegram.sendMessage(groupId, header);
