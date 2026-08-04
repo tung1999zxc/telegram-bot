@@ -16,7 +16,7 @@ const TAG_GROUPS = {
   "#giahq": ["-5250242593"],
   "#giahqtt": ["-5250242593"],
   "#hoihq": ["-1003788218121"],
-  "#hoisp": ["-1003855173449"],
+  "#hoisp": ["-1003855173449", "-5287372938"],
   "#xinAds": ["-1004461793681"],
 };
 
@@ -708,7 +708,6 @@ bot.on("message", async (ctx) => {
 
   if (isGiaNormal || isGiaHqtt) {
     const currentTag = isGiaHqtt ? "#giahqtt" : "#giahq";
-    const data = parseInput(captionText);
 
     let photoId = null;
 
@@ -729,6 +728,17 @@ bot.on("message", async (ctx) => {
         "❌ Thiếu ảnh sản phẩm hoặc định dạng ảnh không hỗ trợ.",
       );
     }
+
+    const data = parseInput(captionText);
+
+    // Kiểm tra data hợp lệ
+    if (!data) {
+      console.error("❌ parseInput trả về null cho caption:", captionText);
+      return ctx.reply(
+        "❌ Không đọc được thông tin từ caption. Vui lòng kiểm tra định dạng: #giahq <cân nặng>g <giá>t <link 1688>",
+      );
+    }
+
     const special =
       typeof isSpecialCase === "function"
         ? isSpecialCase(data.weight, data.x)
