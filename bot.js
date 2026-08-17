@@ -73,9 +73,16 @@ function isSpecialCase(weight, x) {
   return (x < 8 && weight < 100) || (x < 7 && weight >= 100 && weight <= 200);
 }
 function getConstantHqtt(weightKg) {
-  // Nhóm nhẹ
-  if (weightKg <= 0.4) return 625;
-  if (weightKg <= 1.0) return 650;
+  // Nhóm nhẹ (chi tiết theo từng mốc)
+  if (weightKg <= 0.1) return 500;
+  if (weightKg <= 0.2) return 515;
+  if (weightKg <= 0.3) return 525;
+  if (weightKg <= 0.4) return 540;
+  if (weightKg <= 0.6) return 675;
+  if (weightKg <= 0.7) return 700;
+  if (weightKg <= 0.8) return 725;
+  if (weightKg <= 0.9) return 750;
+  
 
   // Nhóm trung bình (Dựa trên ảnh 2)
   if (weightKg <= 1.1) return 775;
@@ -100,7 +107,7 @@ function getConstantHqtt(weightKg) {
 function calculateCombos(weightPerUnit, x, isSpecial, isHqtt = false) {
   const results = [];
 
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= (isHqtt ? 3 : 5); i++) {
     // n là tổng số lượng sản phẩm (Ví dụ combo 2+2 thì n = 4)
     const n = isSpecial ? i * 2 : i;
 
