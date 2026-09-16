@@ -316,7 +316,7 @@ async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
     const m = await ctx.telegram.sendPhoto(groupId, photoId, {
       caption: fullMessage,
     });
-    sentMessageInfo.push(m.message_id);
+    sentMessageInfo.push({ chatId: String(m.chat.id), messageId: m.message_id });
   }
 
   // gửi lại cho user
@@ -576,9 +576,18 @@ bot.on("message", async (ctx) => {
 
   // --- A. PHẢN HỒI TỪ GROUP VỀ USER (Kèm Trích Dẫn) ---
   if (msg.reply_to_message) {
+    // ⭐ Check 1: chỉ xử lý nếu tin nhắn được reply là do BOT gửi
+    const repliedFrom = msg.reply_to_message.from;
+    if (!repliedFrom || repliedFrom.id !== bot.botInfo.id) {
+      // Không phải tin bot gửi (thành viên gõ trực tiếp) → bỏ qua
+      return;
+    }
+
+    const repliedChatId = String(msg.reply_to_message.chat.id);
     const repliedId = msg.reply_to_message.message_id;
-    const data = GROUP_REPLY_MAP[repliedId];
-    const info = GROUP_REPLY_INFO[repliedId];
+    const replyKey = `${repliedChatId}:${repliedId}`;
+    const data = GROUP_REPLY_MAP[replyKey];
+    const info = GROUP_REPLY_INFO[replyKey];
     if (data) {
       // Lấy ID người dùng
       const originalUserId = data.userId || data;
@@ -766,10 +775,11 @@ bot.on("message", async (ctx) => {
       photoId,
       currentTag,
     );
-    sentIds.forEach((id) => {
-      GROUP_REPLY_MAP[id] = ctx.from.id;
+    sentIds.forEach((info) => {
+      const key = `${info.chatId}:${info.messageId}`;
+      GROUP_REPLY_MAP[key] = ctx.from.id;
 
-      GROUP_REPLY_INFO[id] = {
+      GROUP_REPLY_INFO[key] = {
         name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim(),
         username: ctx.from.username
           ? `@${ctx.from.username}`
@@ -816,8 +826,9 @@ bot.on("message", async (ctx) => {
         }));
         const sentAlbum = await ctx.telegram.sendMediaGroup(groupId, media);
         sentAlbum.forEach((m) => {
-          GROUP_REPLY_MAP[m.message_id] = ctx.from.id;
-          GROUP_REPLY_INFO[m.message_id] = {
+          const key = `${String(m.chat.id)}:${m.message_id}`;
+          GROUP_REPLY_MAP[key] = ctx.from.id;
+          GROUP_REPLY_INFO[key] = {
             name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim(),
             username: ctx.from.username
               ? `@${ctx.from.username}`
@@ -857,9 +868,10 @@ bot.on("message", async (ctx) => {
           s = await ctx.telegram.sendMessage(groupId, header);
 
         if (s) {
-          GROUP_REPLY_MAP[s.message_id] = ctx.from.id;
+          const key = `${String(s.chat.id)}:${s.message_id}`;
+          GROUP_REPLY_MAP[key] = ctx.from.id;
 
-          GROUP_REPLY_INFO[s.message_id] = {
+          GROUP_REPLY_INFO[key] = {
             name: `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim(),
             username: ctx.from.username
               ? `@${ctx.from.username}`
@@ -912,8 +924,10 @@ bot.on("message", async (ctx) => {
 bot.on("message_reaction", async (ctx) => {
   const data = ctx.update.message_reaction;
 
+  const chatId = String(data.chat.id);
   const msgId = data.message_id;
-  const originalUserId = GROUP_REPLY_MAP[msgId];
+  const key = `${chatId}:${msgId}`;
+  const originalUserId = GROUP_REPLY_MAP[key];
   if (!originalUserId) return;
 
   const emojis = data.new_reaction.map((r) => r.emoji).join(", ");
@@ -932,8 +946,10 @@ bot.on("message_reaction", async (ctx) => {
 bot.on("message_reaction_count", async (ctx) => {
   const data = ctx.update.message_reaction_count;
 
+  const chatId = String(data.chat.id);
   const msgId = data.message_id;
-  const originalUserId = GROUP_REPLY_MAP[msgId];
+  const key = `${chatId}:${msgId}`;
+  const originalUserId = GROUP_REPLY_MAP[key];
   if (!originalUserId) return;
 
   const summary = data.reactions
