@@ -14,7 +14,7 @@ const TAG_GROUPS = {
   "#xinnghi": ["-4985569408"],
   "#baocao": ["-5060706783"],
   "#giahq": ["-5250242593"],
-  "#giahqtt": ["-5250242593"],
+  "#giavn": ["-5250242593"],
   "#hoihq": ["-1003788218121"],
   "#hoisp": ["-1003855173449", "-5287372938"],
   "#xinAds": ["-1004461793681"],
@@ -73,36 +73,87 @@ function isSpecialCase(weight, x) {
   return (x < 8 && weight < 100) || (x < 7 && weight >= 100 && weight <= 200);
 }
 function getConstantHqtt(weightKg) {
-  // Nhóm nhẹ (chi tiết theo từng mốc)
-  if (weightKg <= 0.1) return 500;
-  if (weightKg <= 0.2) return 515;
-  if (weightKg <= 0.3) return 525;
-  if (weightKg <= 0.4) return 540;
-  if (weightKg <= 0.6) return 675;
-  if (weightKg <= 0.7) return 700;
-  if (weightKg <= 0.8) return 725;
-  if (weightKg <= 0.9) return 750;
-  
+  // Nhóm 1 (0,02 → 0,52 kg, bước 0,05)
+  if (weightKg <= 0.02) return 490;
+  if (weightKg <= 0.07) return 505;
+  if (weightKg <= 0.12) return 520;
+  if (weightKg <= 0.17) return 535;
+  if (weightKg <= 0.22) return 550;
+  if (weightKg <= 0.27) return 565;
+  if (weightKg <= 0.32) return 580;
+  if (weightKg <= 0.37) return 595;
+  if (weightKg <= 0.42) return 610;
+  if (weightKg <= 0.47) return 625;
+  if (weightKg <= 0.52) return 640;
 
-  // Nhóm trung bình (Dựa trên ảnh 2)
-  if (weightKg <= 1.1) return 775;
-  if (weightKg <= 1.2) return 800;
-  if (weightKg <= 1.3) return 825;
-  if (weightKg <= 1.4) return 850;
-  if (weightKg <= 1.5) return 900;
-  if (weightKg <= 1.6) return 950;
-  if (weightKg <= 1.7) return 975;
+  // Nhóm 2 (0,57 → 1,02 kg, bước 0,05)
+  if (weightKg <= 0.57) return 644;
+  if (weightKg <= 0.62) return 648;
+  if (weightKg <= 0.67) return 652;
+  if (weightKg <= 0.72) return 656;
+  if (weightKg <= 0.77) return 660;
+  if (weightKg <= 0.82) return 664;
+  if (weightKg <= 0.87) return 668;
+  if (weightKg <= 0.92) return 672;
+  if (weightKg <= 0.97) return 676;
+  if (weightKg <= 1.02) return 680;
 
-  // Nhóm nặng (Dựa trên ảnh 1)
-  if (weightKg <= 1.8) return 1000;
-  if (weightKg <= 1.9) return 1050;
-  if (weightKg <= 3.0) return 1150;
-  if (weightKg <= 3.2) return 1200; // Mốc 3,1 - 3,2
-  if (weightKg <= 3.3) return 1225;
-  if (weightKg <= 3.4) return 1250;
-  if (weightKg <= 3.5) return 1300;
+  // Nhóm 3 (1,07 → 2,02 kg, bước 0,05)
+  if (weightKg <= 1.07) return 700;
+  if (weightKg <= 1.12) return 720;
+  if (weightKg <= 1.17) return 740;
+  if (weightKg <= 1.22) return 760;
+  if (weightKg <= 1.27) return 780;
+  if (weightKg <= 1.32) return 800;
+  if (weightKg <= 1.37) return 820;
+  if (weightKg <= 1.42) return 840;
+  if (weightKg <= 1.47) return 860;
+  if (weightKg <= 1.52) return 880;
+  if (weightKg <= 1.57) return 900;
+  if (weightKg <= 1.62) return 920;
+  if (weightKg <= 1.67) return 940;
+  if (weightKg <= 1.72) return 960;
+  if (weightKg <= 1.77) return 980;
+  if (weightKg <= 1.82) return 1000;
+  if (weightKg <= 1.87) return 1020;
+  if (weightKg <= 1.92) return 1040;
+  if (weightKg <= 1.97) return 1060;
+  if (weightKg <= 2.02) return 1080;
 
-  return null; // Quá 3.5kg
+  // Nhóm 4 (2,07 → 3,02 kg, bước 0,05)
+  if (weightKg <= 2.07) return 1100;
+  if (weightKg <= 2.12) return 1120;
+  if (weightKg <= 2.17) return 1140;
+  if (weightKg <= 2.22) return 1160;
+  if (weightKg <= 2.27) return 1180;
+  if (weightKg <= 2.32) return 1200;
+  if (weightKg <= 2.37) return 1220;
+  if (weightKg <= 2.42) return 1240;
+  if (weightKg <= 2.47) return 1260;
+  if (weightKg <= 2.52) return 1280;
+  if (weightKg <= 2.57) return 1300;
+  if (weightKg <= 2.62) return 1320;
+  if (weightKg <= 2.67) return 1340;
+  if (weightKg <= 2.72) return 1360;
+  if (weightKg <= 2.77) return 1380;
+  if (weightKg <= 2.82) return 1400;
+  if (weightKg <= 2.87) return 1420;
+  if (weightKg <= 2.92) return 1440;
+  if (weightKg <= 2.97) return 1460;
+
+  // Nhóm 5 (3,02 → 3,47 kg, bước 0,05)
+  if (weightKg <= 3.02) return 1240;
+  if (weightKg <= 3.07) return 1260;
+  if (weightKg <= 3.12) return 1280;
+  if (weightKg <= 3.17) return 1300;
+  if (weightKg <= 3.22) return 1320;
+  if (weightKg <= 3.27) return 1340;
+  if (weightKg <= 3.32) return 1360;
+  if (weightKg <= 3.37) return 1380;
+  if (weightKg <= 3.42) return 1400;
+  if (weightKg <= 3.47) return 1420;
+
+  return null; // Quá 3,47 kg
 }
 function calculateCombos(weightPerUnit, x, isSpecial, isHqtt = false) {
   const results = [];
@@ -140,112 +191,72 @@ function calculateCombos(weightPerUnit, x, isSpecial, isHqtt = false) {
 
 function getConstantOld(weightKg) {
   if (weightKg <= 0) return null;
-  // Copy toàn bộ logic "if (weightKg <= 0.03) constant = 590..." từ hàm getPriceByWeight cũ của bạn vào đây
-  // Chỉ return về con số (ví dụ: return 590), không tính toán (25*x...)/17 ở đây.
-  // ... (Phần logic if/else hằng số cũ của bạn) ...
-  if (weightKg <= 0.03) return 590;
-  if (weightKg <= 0.06) return 605;
-  if (weightKg <= 0.09) return 620;
-  if (weightKg <= 0.12) return 635;
-  if (weightKg <= 0.15) return 650;
-  if (weightKg <= 0.18) return 665;
-  if (weightKg <= 0.21) return 680;
-  if (weightKg <= 0.24) return 695;
-  if (weightKg <= 0.27) return 710;
-  if (weightKg <= 0.3) return 725;
-  if (weightKg <= 0.33) return 740;
-  if (weightKg <= 0.36) return 755;
-  if (weightKg <= 0.39) return 770;
-  if (weightKg <= 0.42) return 785;
-  if (weightKg <= 0.45) return 800;
-  if (weightKg <= 0.48) return 815;
-  if (weightKg <= 0.51) return 830;
-  if (weightKg <= 0.54) return 845;
-  if (weightKg <= 0.57) return 860;
-  if (weightKg <= 0.6) return 875;
-  if (weightKg <= 0.63) return 890;
-  if (weightKg <= 0.66) return 905;
-  if (weightKg <= 0.69) return 920;
-  if (weightKg <= 0.72) return 935;
-  if (weightKg <= 0.75) return 950;
-  if (weightKg <= 0.78) return 965;
-  if (weightKg <= 0.81) return 980;
-  if (weightKg <= 0.84) return 995;
-  if (weightKg <= 0.87) return 1010;
-  if (weightKg <= 0.9) return 1025;
-  if (weightKg <= 0.93) return 1040;
-  if (weightKg <= 0.96) return 1055;
-  if (weightKg <= 1.0) return 1075;
+  // Bảng giá mới: bước 0.05kg, phủ từ 0.10kg đến 3.00kg.
+  // Dưới 0.10kg hoặc trên 3.00kg: trả về null.
+  // --- NHÓM 0.10kg - 1.00kg ---
+  if (weightKg <= 0.10) return 875;
+  if (weightKg <= 0.15) return 880;
+  if (weightKg <= 0.20) return 885;
+  if (weightKg <= 0.25) return 890;
+  if (weightKg <= 0.30) return 895;
+  if (weightKg <= 0.35) return 900;
+  if (weightKg <= 0.40) return 905;
+  if (weightKg <= 0.45) return 910;
+  if (weightKg <= 0.50) return 915;
+  if (weightKg <= 0.55) return 920;
+  if (weightKg <= 0.60) return 925;
+  if (weightKg <= 0.65) return 930;
+  if (weightKg <= 0.70) return 935;
+  if (weightKg <= 0.75) return 940;
+  if (weightKg <= 0.80) return 945;
+  if (weightKg <= 0.85) return 950;
+  if (weightKg <= 0.90) return 955;
+  if (weightKg <= 0.95) return 960;
+  if (weightKg <= 1.00) return 965;
 
-  // --- NHÓM 1kg - 2kg ---
-  if (weightKg <= 1.03) return 1090;
-  if (weightKg <= 1.06) return 1105;
-  if (weightKg <= 1.09) return 1120;
-  if (weightKg <= 1.12) return 1135;
-  if (weightKg <= 1.15) return 1150;
-  if (weightKg <= 1.18) return 1165;
-  if (weightKg <= 1.21) return 1180;
-  if (weightKg <= 1.24) return 1195;
-  if (weightKg <= 1.27) return 1210;
-  if (weightKg <= 1.3) return 1225;
-  if (weightKg <= 1.33) return 1240;
-  if (weightKg <= 1.36) return 1255;
-  if (weightKg <= 1.39) return 1270;
-  if (weightKg <= 1.42) return 1285;
-  if (weightKg <= 1.45) return 1300;
-  if (weightKg <= 1.48) return 1315;
-  if (weightKg <= 1.51) return 1330;
-  if (weightKg <= 1.54) return 1345;
-  if (weightKg <= 1.57) return 1360;
-  if (weightKg <= 1.6) return 1375;
-  if (weightKg <= 1.63) return 1390;
-  if (weightKg <= 1.66) return 1405;
-  if (weightKg <= 1.69) return 1420;
-  if (weightKg <= 1.72) return 1435;
-  if (weightKg <= 1.75) return 1450;
-  if (weightKg <= 1.78) return 1465;
-  if (weightKg <= 1.81) return 1480;
-  if (weightKg <= 1.84) return 1495;
-  if (weightKg <= 1.87) return 1510;
-  if (weightKg <= 1.9) return 1525;
-  if (weightKg <= 1.93) return 1540;
-  if (weightKg <= 1.96) return 1555;
-  if (weightKg <= 2.0) return 1575;
+  // --- NHÓM 1.00kg - 2.00kg ---
+  if (weightKg <= 1.05) return 970;
+  if (weightKg <= 1.10) return 975;
+  if (weightKg <= 1.15) return 1020;
+  if (weightKg <= 1.20) return 1065;
+  if (weightKg <= 1.25) return 1110;
+  if (weightKg <= 1.30) return 1150;
+  if (weightKg <= 1.35) return 1200;
+  if (weightKg <= 1.40) return 1250;
+  if (weightKg <= 1.45) return 1290;
+  if (weightKg <= 1.50) return 1325;
+  if (weightKg <= 1.55) return 1375;
+  if (weightKg <= 1.60) return 1425;
+  if (weightKg <= 1.65) return 1465;
+  if (weightKg <= 1.70) return 1500;
+  if (weightKg <= 1.75) return 1550;
+  if (weightKg <= 1.80) return 1600;
+  if (weightKg <= 1.85) return 1640;
+  if (weightKg <= 1.90) return 1675;
+  if (weightKg <= 1.95) return 1725;
+  if (weightKg <= 2.00) return 1775;
 
-  // --- NHÓM 2kg - 3kg ---
-  if (weightKg <= 2.03) return 1590;
-  if (weightKg <= 2.06) return 1605;
-  if (weightKg <= 2.09) return 1620;
-  if (weightKg <= 2.12) return 1635;
-  if (weightKg <= 2.15) return 1650;
-  if (weightKg <= 2.18) return 1665;
-  if (weightKg <= 2.21) return 1680;
-  if (weightKg <= 2.24) return 1695;
-  if (weightKg <= 2.27) return 1710;
-  if (weightKg <= 2.3) return 1725;
-  if (weightKg <= 2.33) return 1740;
-  if (weightKg <= 2.36) return 1755;
-  if (weightKg <= 2.39) return 1770;
-  if (weightKg <= 2.42) return 1785;
-  if (weightKg <= 2.45) return 1800;
-  if (weightKg <= 2.48) return 1815;
-  if (weightKg <= 2.51) return 1830;
-  if (weightKg <= 2.54) return 1845;
-  if (weightKg <= 2.57) return 1860;
-  if (weightKg <= 2.6) return 1875;
-  if (weightKg <= 2.63) return 1890;
-  if (weightKg <= 2.66) return 1905;
-  if (weightKg <= 2.69) return 1920;
-  if (weightKg <= 2.72) return 1935;
-  if (weightKg <= 2.75) return 1950;
-  if (weightKg <= 2.78) return 1965;
-  if (weightKg <= 2.81) return 1980;
-  if (weightKg <= 2.84) return 1995;
-  if (weightKg <= 2.87) return 2010;
-  if (weightKg <= 2.9) return 2025;
-  if (weightKg <= 2.93) return 2040;
-  if (weightKg <= 2.96) return 2055;
-  if (weightKg <= 3.0) return 2075;
+  // --- NHÓM 2.00kg - 3.00kg ---
+  if (weightKg <= 2.05) return 1810;
+  if (weightKg <= 2.10) return 1850;
+  if (weightKg <= 2.15) return 1900;
+  if (weightKg <= 2.20) return 1950;
+  if (weightKg <= 2.25) return 1990;
+  if (weightKg <= 2.30) return 2025;
+  if (weightKg <= 2.35) return 2075;
+  if (weightKg <= 2.40) return 2125;
+  if (weightKg <= 2.45) return 2165;
+  if (weightKg <= 2.50) return 2200;
+  if (weightKg <= 2.55) return 2250;
+  if (weightKg <= 2.60) return 2300;
+  if (weightKg <= 2.65) return 2340;
+  if (weightKg <= 2.70) return 2375;
+  if (weightKg <= 2.75) return 2438;
+  if (weightKg <= 2.80) return 2500;
+  if (weightKg <= 2.85) return 2525;
+  if (weightKg <= 2.90) return 2550;
+  if (weightKg <= 2.95) return 2650;
+  if (weightKg <= 3.00) return 2750;
   return null;
 }
 
@@ -720,10 +731,10 @@ bot.on("message", async (ctx) => {
 
   // --- B. XỬ LÝ TÍNH GIÁ (#giahq, #giahqtt) ---
   const isGiaNormal = lowerText.includes("#giahq");
-  const isGiaHqtt = lowerText.includes("#giahqtt");
+  const isGiaHqtt = lowerText.includes("#giavn");
 
   if (isGiaNormal || isGiaHqtt) {
-    const currentTag = isGiaHqtt ? "#giahqtt" : "#giahq";
+    const currentTag = isGiaHqtt ? "#giavn" : "#giahq";
 
     let photoId = null;
 
@@ -787,7 +798,7 @@ bot.on("message", async (ctx) => {
         id: ctx.from.id,
       };
     });
-    return ctx.reply(`✅ Làm giá ${isGiaHqtt ? "HQTT" : "SP"} thành công.`);
+    return ctx.reply(`✅ Làm giá ${isGiaHqtt ? "HQ" : "SP"} thành công.`);
   }
 
   // --- C. XỬ LÝ GỬI ẨN DANH (Hỗ trợ Album & Mọi loại file) ---
