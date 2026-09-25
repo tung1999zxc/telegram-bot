@@ -20,6 +20,56 @@ const TAG_GROUPS = {
   "#xinAds": ["-1004461793681"],
 };
 
+// =========================================================
+// TAG → DISPLAY NAME (chỉ đổi tên hiển thị, giữ nguyên tag)
+// =========================================================
+const TAG_DISPLAY_NAMES = {
+  "#st": "Sáng (5h30-8h30 + 12h00-14h00)",
+  "#t": "Tối (18h00-23h00)",
+  "#hanh": "HC (8h30-12h00 + 14h00-18h00)",
+  "#cn": "CN/Lễ",
+  "#giahq": "KHO TQ",
+  "#giavn": "KHO VN",
+};
+
+// Tags cho menu Sale (gom nhóm)
+// =========================================================
+const SALE_TAGS = ["#st", "#t", "#hanh", "#cn"];
+
+// =========================================================
+// TAG KHO - CHỈ MỘT SỐ USERNAME ĐƯỢC DÙNG
+// =========================================================
+const KHO_TAGS = ["#giahq", "#giavn"];
+
+const KHO_ALLOWED_USERNAMES = [
+  "@NguyeenTuanAnh",
+  "@ngocanhhoang2201",
+  "@manhtung03",
+  "@NguyenTheHiep",
+  "@Vphi_lmc",
+  "@Manhnhay",
+  "@manhanhhp",
+  "@tranmyyhanh_1312",
+  "@Thanh2345a",
+  "@Dientran21",
+  "@SON_NV01",
+  "@cunnbabyy",
+  "@Tung9900",
+  "@PhamHoan9411",
+];
+
+function canUseTag(ctx, tag) {
+  const tagLower = (tag || "").toLowerCase();
+  if (!KHO_TAGS.includes(tagLower)) return true;
+
+  const username = ctx.from.username ? `@${ctx.from.username}` : "";
+  return KHO_ALLOWED_USERNAMES.includes(username);
+}
+
+function getTagDisplayName(tag) {
+  return TAG_DISPLAY_NAMES[tag] || tag.toUpperCase();
+}
+
 const ADMINS = [1696923084, 6280099511];
 
 const ALBUM_CACHE = new Map();
@@ -194,69 +244,69 @@ function getConstantOld(weightKg) {
   // Bảng giá mới: bước 0.05kg, phủ từ 0.10kg đến 3.00kg.
   // Dưới 0.10kg hoặc trên 3.00kg: trả về null.
   // --- NHÓM 0.10kg - 1.00kg ---
-  if (weightKg <= 0.10) return 875;
+  if (weightKg <= 0.1) return 875;
   if (weightKg <= 0.15) return 880;
-  if (weightKg <= 0.20) return 885;
+  if (weightKg <= 0.2) return 885;
   if (weightKg <= 0.25) return 890;
-  if (weightKg <= 0.30) return 895;
+  if (weightKg <= 0.3) return 895;
   if (weightKg <= 0.35) return 900;
-  if (weightKg <= 0.40) return 905;
+  if (weightKg <= 0.4) return 905;
   if (weightKg <= 0.45) return 910;
-  if (weightKg <= 0.50) return 915;
+  if (weightKg <= 0.5) return 915;
   if (weightKg <= 0.55) return 920;
-  if (weightKg <= 0.60) return 925;
+  if (weightKg <= 0.6) return 925;
   if (weightKg <= 0.65) return 930;
-  if (weightKg <= 0.70) return 935;
+  if (weightKg <= 0.7) return 935;
   if (weightKg <= 0.75) return 940;
-  if (weightKg <= 0.80) return 945;
+  if (weightKg <= 0.8) return 945;
   if (weightKg <= 0.85) return 950;
-  if (weightKg <= 0.90) return 955;
+  if (weightKg <= 0.9) return 955;
   if (weightKg <= 0.95) return 960;
-  if (weightKg <= 1.00) return 965;
+  if (weightKg <= 1.0) return 965;
 
   // --- NHÓM 1.00kg - 2.00kg ---
   if (weightKg <= 1.05) return 970;
-  if (weightKg <= 1.10) return 975;
+  if (weightKg <= 1.1) return 975;
   if (weightKg <= 1.15) return 1020;
-  if (weightKg <= 1.20) return 1065;
+  if (weightKg <= 1.2) return 1065;
   if (weightKg <= 1.25) return 1110;
-  if (weightKg <= 1.30) return 1150;
+  if (weightKg <= 1.3) return 1150;
   if (weightKg <= 1.35) return 1200;
-  if (weightKg <= 1.40) return 1250;
+  if (weightKg <= 1.4) return 1250;
   if (weightKg <= 1.45) return 1290;
-  if (weightKg <= 1.50) return 1325;
+  if (weightKg <= 1.5) return 1325;
   if (weightKg <= 1.55) return 1375;
-  if (weightKg <= 1.60) return 1425;
+  if (weightKg <= 1.6) return 1425;
   if (weightKg <= 1.65) return 1465;
-  if (weightKg <= 1.70) return 1500;
+  if (weightKg <= 1.7) return 1500;
   if (weightKg <= 1.75) return 1550;
-  if (weightKg <= 1.80) return 1600;
+  if (weightKg <= 1.8) return 1600;
   if (weightKg <= 1.85) return 1640;
-  if (weightKg <= 1.90) return 1675;
+  if (weightKg <= 1.9) return 1675;
   if (weightKg <= 1.95) return 1725;
-  if (weightKg <= 2.00) return 1775;
+  if (weightKg <= 2.0) return 1775;
 
   // --- NHÓM 2.00kg - 3.00kg ---
   if (weightKg <= 2.05) return 1810;
-  if (weightKg <= 2.10) return 1850;
+  if (weightKg <= 2.1) return 1850;
   if (weightKg <= 2.15) return 1900;
-  if (weightKg <= 2.20) return 1950;
+  if (weightKg <= 2.2) return 1950;
   if (weightKg <= 2.25) return 1990;
-  if (weightKg <= 2.30) return 2025;
+  if (weightKg <= 2.3) return 2025;
   if (weightKg <= 2.35) return 2075;
-  if (weightKg <= 2.40) return 2125;
+  if (weightKg <= 2.4) return 2125;
   if (weightKg <= 2.45) return 2165;
-  if (weightKg <= 2.50) return 2200;
+  if (weightKg <= 2.5) return 2200;
   if (weightKg <= 2.55) return 2250;
-  if (weightKg <= 2.60) return 2300;
+  if (weightKg <= 2.6) return 2300;
   if (weightKg <= 2.65) return 2340;
-  if (weightKg <= 2.70) return 2375;
+  if (weightKg <= 2.7) return 2375;
   if (weightKg <= 2.75) return 2438;
-  if (weightKg <= 2.80) return 2500;
+  if (weightKg <= 2.8) return 2500;
   if (weightKg <= 2.85) return 2525;
-  if (weightKg <= 2.90) return 2550;
+  if (weightKg <= 2.9) return 2550;
   if (weightKg <= 2.95) return 2650;
-  if (weightKg <= 3.00) return 2750;
+  if (weightKg <= 3.0) return 2750;
   return null;
 }
 
@@ -312,7 +362,7 @@ async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
     `${sender.first_name || ""} ${sender.last_name || ""}`.trim();
 
   const form =
-    `🏷 Tag: ${tag.toUpperCase()}\n` +
+    `🏷 Tag: ${getTagDisplayName(tag)}\n` +
     `👤 Người gửi: ${senderName} (@${sender.username || "no_user"})\n` +
     `🔗 Link: ${data.link}\n` +
     `⚖️ Cân nặng: ${data.weight}g\n` +
@@ -327,7 +377,10 @@ async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
     const m = await ctx.telegram.sendPhoto(groupId, photoId, {
       caption: fullMessage,
     });
-    sentMessageInfo.push({ chatId: String(m.chat.id), messageId: m.message_id });
+    sentMessageInfo.push({
+      chatId: String(m.chat.id),
+      messageId: m.message_id,
+    });
   }
 
   // gửi lại cho user
@@ -339,27 +392,30 @@ async function sendPriceToGroup(ctx, data, combos, photoId, tag) {
 }
 
 // =========================================================
-// HÀM GỬI MENU TAGS
+// HÀM GỬI MENU TAGS (MENU CHÍNH)
 // =========================================================
 async function sendTagsMenu(ctx) {
-  const tags = Object.keys(TAG_GROUPS);
+  const allTags = Object.keys(TAG_GROUPS);
+  const tags = allTags.filter((t) => !SALE_TAGS.includes(t));
 
-  // Chia tags thành các hàng, mỗi hàng tối đa 3 button
+  // Chia tags thành các hàng, mỗi hàng tối đa 2 button
   const rows = [];
-  for (let i = 0; i < tags.length; i += 3) {
-    const row = tags.slice(i, i + 3).map((tag) => ({
-      text: tag,
+  for (let i = 0; i < tags.length; i += 2) {
+    const row = tags.slice(i, i + 2).map((tag) => ({
+      text: getTagDisplayName(tag),
       callback_data: `tag_${tag}`,
     }));
     rows.push(row);
   }
+  // Nút quay lại menu chính
+  rows.push([{ text: "🔙 Quay lại", callback_data: "show_main" }]);
 
   const keyboard = {
     inline_keyboard: rows,
   };
 
   await ctx.reply(
-    "🏷️ <b>CHỌN TAG</b>\n\nNhấn vào tag bên dưới để chèn vào tin nhắn:",
+    "🏷️ <b>TAGS KHÁC</b>\n\nNhấn vào tag bên dưới để chèn vào tin nhắn:",
     {
       parse_mode: "HTML",
       reply_markup: keyboard,
@@ -368,10 +424,89 @@ async function sendTagsMenu(ctx) {
 }
 
 // =========================================================
-// MENU TAG - HIỂN THỊ BUTTON CHỌN TAG
+// HÀM GỬI MENU CHÍNH (SALE + CÁC TAG KHÁC)
+// =========================================================
+async function sendMainMenu(ctx) {
+  const allTags = Object.keys(TAG_GROUPS);
+  // Lọc tag KHO mà user không có quyền
+  const visibleTags = allTags.filter((t) => canUseTag(ctx, t));
+  const otherTags = visibleTags.filter((t) => !SALE_TAGS.includes(t));
+
+  const rows = [];
+
+  // Tiêu đề SALE (không phải button)
+  rows.push([{ text: "🛒 SALE", callback_data: "noop_sale" }]);
+
+  // Các button Sale dài (1 mỗi hàng)
+  const SALE_LONG = ["#st", "#hanh"]; // tag dài, mỗi cái 1 dòng
+  const SALE_SHORT = SALE_TAGS.filter((t) => !SALE_LONG.includes(t));
+
+  SALE_LONG.forEach((tag) => {
+    rows.push([
+      {
+        text: getTagDisplayName(tag),
+        callback_data: `tag_${tag}`,
+      },
+    ]);
+  });
+
+  // Các button Sale ngắn (2 mỗi hàng)
+  for (let i = 0; i < SALE_SHORT.length; i += 2) {
+    const row = SALE_SHORT.slice(i, i + 2).map((tag) => ({
+      text: getTagDisplayName(tag),
+      callback_data: `tag_${tag}`,
+    }));
+    rows.push(row);
+  }
+
+  // Tiêu đề TAGS KHÁC (không phải button)
+  rows.push([{ text: "🏷️ TAGS KHÁC", callback_data: "noop_other" }]);
+
+  // Các button tags khác (2 mỗi hàng)
+  for (let i = 0; i < otherTags.length; i += 2) {
+    const row = otherTags.slice(i, i + 2).map((tag) => ({
+      text: getTagDisplayName(tag),
+      callback_data: `tag_${tag}`,
+    }));
+    rows.push(row);
+  }
+
+  const keyboard = { inline_keyboard: rows };
+
+  await ctx.reply("🏷️ <b>CHỌN TAG</b>\n\nChọn tag cần dùng:", {
+    parse_mode: "HTML",
+    reply_markup: keyboard,
+  });
+}
+
+// =========================================================
+// HÀM GỬI MENU SALE (SUBMENU)
+// =========================================================
+async function sendSaleMenu(ctx) {
+  const rows = [];
+  for (let i = 0; i < SALE_TAGS.length; i += 2) {
+    const row = SALE_TAGS.slice(i, i + 2).map((tag) => ({
+      text: getTagDisplayName(tag),
+      callback_data: `tag_${tag}`,
+    }));
+    rows.push(row);
+  }
+  // Nút quay lại menu chính
+  rows.push([{ text: "🔙 Quay lại", callback_data: "show_main" }]);
+
+  const keyboard = { inline_keyboard: rows };
+
+  await ctx.reply("🛒 <b>SALE</b>\n\nChọn ca làm việc:", {
+    parse_mode: "HTML",
+    reply_markup: keyboard,
+  });
+}
+
+// =========================================================
+// MENU TAG - HIỂN THỊ MENU CHÍNH
 // =========================================================
 bot.command(["tags", "tag", "menu"], async (ctx) => {
-  await sendTagsMenu(ctx);
+  await sendMainMenu(ctx);
 });
 
 // =========================================================
@@ -390,7 +525,7 @@ bot.command("start", async (ctx) => {
       parse_mode: "HTML",
       reply_markup: {
         inline_keyboard: [
-          [{ text: "🏷️ Chọn Tag", callback_data: "show_tags" }],
+          [{ text: "🏷️ Chọn Tag", callback_data: "show_main" }],
         ],
       },
     },
@@ -401,22 +536,62 @@ bot.command("start", async (ctx) => {
 bot.on("callback_query", async (ctx) => {
   const data = ctx.callbackQuery.data;
 
-  // Nút hiện menu tags
+  // Nút tiêu đề (no-op, chỉ hiển thị)
+  if (data && data.startsWith("noop_")) {
+    try {
+      await ctx.answerCallbackQuery();
+    } catch (e) {}
+    return;
+  }
+
+  // Nút hiện menu chính (Sale + Tags khác)
+  if (data === "show_main") {
+    try {
+      await ctx.answerCallbackQuery();
+    } catch (e) {}
+
+    await ctx.deleteMessage().catch(() => {});
+    await sendMainMenu(ctx);
+    return;
+  }
+
+  // Nút hiện menu tags chính (menu danh sách tags)
   if (data === "show_tags") {
     try {
       await ctx.answerCallbackQuery();
     } catch (e) {}
 
     await ctx.deleteMessage().catch(() => {});
-    await sendTagsMenu(ctx);
+    await sendMainMenu(ctx);
+    return;
+  }
+
+  // Nút hiện menu Sale (submenu)
+  if (data === "show_sale") {
+    try {
+      await ctx.answerCallbackQuery();
+    } catch (e) {}
+
+    await ctx.deleteMessage().catch(() => {});
+    await sendSaleMenu(ctx);
     return;
   }
 
   // Xử lý khi nhấn button tag
   if (data && data.startsWith("tag_")) {
     const tag = data.replace("tag_", "");
-    const tagUpper = tag.toUpperCase();
+    const tagDisplay = getTagDisplayName(tag);
     const userId = ctx.from.id;
+
+    // Chặn user không có quyền dùng tag KHO
+    if (!canUseTag(ctx, tag)) {
+      try {
+        await ctx.answerCallbackQuery("⛔ Bạn không có quyền dùng tag này.", {
+          show_alert: true,
+        });
+      } catch (e) {}
+      return;
+    }
 
     // Lưu tag đang chờ xử lý cho user này (có thời hạn 5 phút)
     PENDING_TAG_MAP[userId] = {
@@ -426,7 +601,7 @@ bot.on("callback_query", async (ctx) => {
 
     // Trả về tag đã chọn cho người dùng (bỏ alert để tránh lỗi)
     try {
-      await ctx.answerCallbackQuery(`Đã chọn: ${tagUpper}`);
+      await ctx.answerCallbackQuery(`Đã chọn: ${tagDisplay}`);
     } catch (e) {
       // Bỏ qua lỗi answer callback
     }
@@ -440,7 +615,7 @@ bot.on("callback_query", async (ctx) => {
 
     // Gửi thông báo hướng dẫn
     await ctx.reply(
-      `🏷️ <b>${tagUpper}</b> - Đã chọn!\n\n` +
+      `🏷️ <b>${tagDisplay}</b> - Đã chọn!\n\n` +
         `Bây giờ gửi ảnh/tin nhắn muốn chuyển, tôi sẽ tự thêm tag "${tag}" vào.`,
       { parse_mode: "HTML" },
     );
@@ -812,19 +987,31 @@ bot.on("message", async (ctx) => {
   }
 
   const tag = foundTag;
+
+  // Chặn user không có quyền dùng tag KHO
+  if (!canUseTag(ctx, tag)) {
+    await ctx.reply("⛔ Bạn không có quyền dùng tag này.");
+    return;
+  }
+
   const targetGroups = TAG_GROUPS[tag];
   const cleanedText = captionText.replace(new RegExp(tag, "gi"), "").trim();
 
-  // Xác định header: #xinAds thì hiện tên người gửi, nhóm khác thì ẩn danh
-  const isXinAds = tag.toLowerCase() === "#xinads";
-  const senderName = `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim();
-  const senderUsername = ctx.from.username ? `@${ctx.from.username}` : "không có username";
+  // Xác định header: #xinAds và #xinnghi thì hiện tên người gửi, nhóm khác thì ẩn danh
+  const tagLower = tag.toLowerCase();
+  const showSender = tagLower === "#xinads" || tagLower === "#xinnghi";
+  const senderName =
+    `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim();
+  const senderUsername = ctx.from.username
+    ? `@${ctx.from.username}`
+    : "không có username";
 
   let header;
-  if (isXinAds) {
-    header = `📦 [${tag.toUpperCase()}]\n👤 ${senderName} (${senderUsername})\n\n${cleanedText}`;
+  const tagDisplay = getTagDisplayName(tag);
+  if (showSender) {
+    header = `📦 [${tagDisplay}]\n👤 ${senderName} (${senderUsername})\n\n${cleanedText}`;
   } else {
-    header = `📦 [${tag.toUpperCase()}]\n${cleanedText}`;
+    header = `📦 [${tagDisplay}]\n${cleanedText}`;
   }
 
   for (const groupId of targetGroups) {
@@ -871,8 +1058,8 @@ bot.on("message", async (ctx) => {
           });
         else if (msg.sticker) {
           const stickerHeader = isXinAds
-            ? `✨ [${tag.toUpperCase()}] ${senderName} (${senderUsername}) gửi sticker:`
-            : `✨ [${tag.toUpperCase()}] gửi sticker:`;
+            ? `✨ [${tagDisplay}] ${senderName} (${senderUsername}) gửi sticker:`
+            : `✨ [${tagDisplay}] gửi sticker:`;
           await ctx.telegram.sendMessage(groupId, stickerHeader);
           s = await ctx.telegram.sendSticker(groupId, msg.sticker.file_id);
         } else if (msg.text)
@@ -924,7 +1111,7 @@ bot.on("message", async (ctx) => {
 
   return ctx
     .reply("✅ Đã chuyển tin nhắn vào nhóm.")
-    .then(() => sendTagsMenu(ctx));
+    .then(() => sendMainMenu(ctx));
 });
 
 // =========================================================
