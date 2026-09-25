@@ -56,6 +56,7 @@ const KHO_ALLOWED_USERNAMES = [
   "@cunnbabyy",
   "@Tung9900",
   "@PhamHoan9411",
+  "@Lamlmc",
 ];
 
 function canUseTag(ctx, tag) {
