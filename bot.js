@@ -958,17 +958,22 @@ bot.on("message", async (ctx) => {
       );
     }
 
-    // ⚡ #giavn tự động chuyển sang #giahq khi cân nặng đầu vào > 350g
-    // (#giavn2 giữ nguyên công thức #giavn, KHÔNG tự chuyển)
+    // ⚡ Sau khi đảo công thức:
+    //   #giahq                    → bảng getConstantOld  (HQ cũ)
+    //   #giavn, weight ≤ 350g     → bảng getConstantHqtt (SP cũ)
+    //   #giavn, weight  > 350g    → bảng getConstantOld  (HQ cũ) — KHÔNG chuyển tag
+    //   #giavn2, mọi cân nặng     → bảng getConstantHqtt (SP cũ)
+    const currentTag = originalTag;
+    const useHqFormula =
+      (originalTag === "#giavn" && data.weight <= AUTO_SWITCH_HQ_WEIGHT) ||
+      originalTag === "#giavn2";
+    // Trường hợp cần note: gõ #giavn nhưng cân nặng > 350g → đang dùng bảng HQ
     const autoSwitched =
       originalTag === "#giavn" && data.weight > AUTO_SWITCH_HQ_WEIGHT;
-    const currentTag = autoSwitched ? "#giahq" : originalTag;
-    // Dùng công thức nào: true = bảng hằng số kiểu HQ (5 combo), false = bảng kiểu SP
-    const useHqFormula = currentTag === "#giahq";
 
     if (autoSwitched) {
       console.log(
-        `[AUTO-SWITCH] ${originalTag} ${data.weight}g > ${AUTO_SWITCH_HQ_WEIGHT}g → chuyển sang #giahq`,
+        `[AUTO-SWITCH] ${originalTag} ${data.weight}g > ${AUTO_SWITCH_HQ_WEIGHT}g → đang dùng bảng HQ (giữ nguyên tag #giavn)`,
       );
     }
 
@@ -1005,11 +1010,11 @@ bot.on("message", async (ctx) => {
       };
     });
     const autoSwitchNote = autoSwitched
-      ? `\n⚠️ ${originalTag}: ${data.weight}g > ${AUTO_SWITCH_HQ_WEIGHT}g → đã tự động dùng công thức #giahq.`
+      ? `\n⚠️ ${data.weight}g > 350g → tự động chuyển bảng KHO TQ .`
       : "";
 
     await ctx.reply(
-      `✅ Làm giá ${useHqFormula ? "HQ" : "SP"} thành công.${autoSwitchNote}`,
+      `✅ Làm giá ${useHqFormula ? "SP" : "HQ"} thành công.${autoSwitchNote}`,
     );
     return sendMainMenu(ctx);
   }
