@@ -15,6 +15,7 @@ const TAG_GROUPS = {
   "#baocao": ["-5060706783"],
   "#giahq": ["-5250242593"],
   "#giavn": ["-5250242593"],
+  "#giavn2": ["-5250242593"],
   "#hoihq": ["-1003788218121"],
   "#hoisp": ["-1003855173449", "-5287372938"],
   "#xinAds": ["-1004461793681"],
@@ -30,6 +31,7 @@ const TAG_DISPLAY_NAMES = {
   "#cn": "CN/Lễ",
   "#giahq": "KHO TQ",
   "#giavn": "KHO VN",
+  "#giavn2": "KHO VN 2",
 };
 
 // Tags cho menu Sale (gom nhóm)
@@ -39,7 +41,7 @@ const SALE_TAGS = ["#st", "#t", "#hanh", "#cn"];
 // =========================================================
 // TAG KHO - CHỈ MỘT SỐ USERNAME ĐƯỢC DÙNG
 // =========================================================
-const KHO_TAGS = ["#giahq", "#giavn"];
+const KHO_TAGS = ["#giahq", "#giavn", "#giavn2"];
 
 const KHO_ALLOWED_USERNAMES = [
   "@NguyeenTuanAnh",
@@ -59,12 +61,21 @@ const KHO_ALLOWED_USERNAMES = [
   "@Lamlmc",
 ];
 
+// Chỉ 2 username này được dùng tag #giavn2
+const GIAVN2_ALLOWED_USERNAMES = ["@tranmyyhanh_1312", "@Tung9900"];
+
 function canUseTag(ctx, tag) {
   const tagLower = (tag || "").toLowerCase();
   if (!KHO_TAGS.includes(tagLower)) return true;
 
   const username = ctx.from.username ? `@${ctx.from.username}` : "";
-  return KHO_ALLOWED_USERNAMES.includes(username);
+  if (!KHO_ALLOWED_USERNAMES.includes(username)) return false;
+
+  // #giavn2 chỉ dành riêng cho 2 user đặc biệt
+  if (tagLower === "#giavn2" && !GIAVN2_ALLOWED_USERNAMES.includes(username)) {
+    return false;
+  }
+  return true;
 }
 
 function getTagDisplayName(tag) {
@@ -119,6 +130,9 @@ function parseInput(text) {
 // =========================================================
 
 // Trả về kết quả cuối cùng
+
+// Ngưỡng cân nặng (gram) cho tag #giavn: từ ngưỡng này trở đi sẽ tự chuyển sang công thức #giahq
+const AUTO_SWITCH_HQ_WEIGHT = 350;
 
 function isSpecialCase(weight, x) {
   return (x < 8 && weight < 100) || (x < 7 && weight >= 100 && weight <= 200);
@@ -905,12 +919,14 @@ bot.on("message", async (ctx) => {
     }
   }
 
-  // --- B. XỬ LÝ TÍNH GIÁ (#giahq, #giahqtt) ---
+  // --- B. XỬ LÝ TÍNH GIÁ (#giahq, #giavn, #giavn2) ---
   const isGiaNormal = lowerText.includes("#giahq");
-  const isGiaHqtt = lowerText.includes("#giavn");
+  const isGiaVn2 = lowerText.includes("#giavn2"); // Phải kiểm tra #giavn2 TRƯỚC #giavn
+  const isGiaVn1 = !isGiaVn2 && lowerText.includes("#giavn");
 
-  if (isGiaNormal || isGiaHqtt) {
-    const currentTag = isGiaHqtt ? "#giavn" : "#giahq";
+  if (isGiaNormal || isGiaVn1 || isGiaVn2) {
+    // Tag gốc user gõ, sẽ dùng để hiển thị nếu KHÔNG bị tự chuyển
+    const originalTag = isGiaVn2 ? "#giavn2" : isGiaVn1 ? "#giavn" : "#giahq";
 
     let photoId = null;
 
@@ -942,13 +958,27 @@ bot.on("message", async (ctx) => {
       );
     }
 
+    // ⚡ #giavn tự động chuyển sang #giahq khi cân nặng đầu vào > 350g
+    // (#giavn2 giữ nguyên công thức #giavn, KHÔNG tự chuyển)
+    const autoSwitched =
+      originalTag === "#giavn" && data.weight > AUTO_SWITCH_HQ_WEIGHT;
+    const currentTag = autoSwitched ? "#giahq" : originalTag;
+    // Dùng công thức nào: true = bảng hằng số kiểu HQ (5 combo), false = bảng kiểu SP
+    const useHqFormula = currentTag === "#giahq";
+
+    if (autoSwitched) {
+      console.log(
+        `[AUTO-SWITCH] ${originalTag} ${data.weight}g > ${AUTO_SWITCH_HQ_WEIGHT}g → chuyển sang #giahq`,
+      );
+    }
+
     const special =
       typeof isSpecialCase === "function"
         ? isSpecialCase(data.weight, data.x)
         : false;
     const combos =
       typeof calculateCombos === "function"
-        ? calculateCombos(data.weight, data.x, special, isGiaHqtt)
+        ? calculateCombos(data.weight, data.x, special, useHqFormula)
         : [];
 
     if (combos.length === 0) return ctx.reply("❌ Không tính được giá.");
@@ -974,14 +1004,23 @@ bot.on("message", async (ctx) => {
         id: ctx.from.id,
       };
     });
-    return ctx.reply(`✅ Làm giá ${isGiaHqtt ? "HQ" : "SP"} thành công.`);
+    const autoSwitchNote = autoSwitched
+      ? `\n⚠️ ${originalTag}: ${data.weight}g > ${AUTO_SWITCH_HQ_WEIGHT}g → đã tự động dùng công thức #giahq.`
+      : "";
+
+    await ctx.reply(
+      `✅ Làm giá ${useHqFormula ? "HQ" : "SP"} thành công.${autoSwitchNote}`,
+    );
+    return sendMainMenu(ctx);
   }
 
   // --- C. XỬ LÝ GỬI ẨN DANH (Hỗ trợ Album & Mọi loại file) ---
   // Tìm tag trong tin nhắn
-  const foundTag = Object.keys(TAG_GROUPS).find((t) =>
-    lowerText.includes(t.toLowerCase()),
-  );
+  // Sắp xếp theo độ dài giảm dần để "#giavn2" được nhận trước "#giavn"
+  // (vì "#giavn" là chuỗi con của "#giavn2")
+  const foundTag = Object.keys(TAG_GROUPS)
+    .sort((a, b) => b.length - a.length)
+    .find((t) => lowerText.includes(t.toLowerCase()));
   if (!foundTag) {
     // Không có tag, không làm gì
     return;
