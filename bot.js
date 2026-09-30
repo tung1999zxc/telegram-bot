@@ -59,6 +59,10 @@ const KHO_ALLOWED_USERNAMES = [
   "@Tung9900",
   "@PhamHoan9411",
   "@Lamlmc",
+  "@quanglee4",
+  "@winny220103",
+  "@kientrunglinh123",
+
 ];
 
 // Chỉ 2 username này được dùng tag #giavn2
