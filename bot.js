@@ -325,7 +325,6 @@ function getConstantOld(weightKg) {
   if (weightKg <= 2.85) return 1350;
   if (weightKg <= 2.9) return 1350;
   return null;
-  return null;
 }
 
 // =========================================================
