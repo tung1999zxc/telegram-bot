@@ -11,7 +11,6 @@ const TAG_GROUPS = {
   "#t": ["-1003316340895"],
   "#hanh": ["-1003469624013", "-1003450550142"],
   "#cn": ["-1003223915676"],
-  "#xinnghi": ["-4985569408"],
   "#baocao": ["-5060706783"],
   "#giahq": ["-5250242593"],
   "#giavn": ["-5250242593"],
@@ -1044,9 +1043,9 @@ bot.on("message", async (ctx) => {
   const targetGroups = TAG_GROUPS[tag];
   const cleanedText = captionText.replace(new RegExp(tag, "gi"), "").trim();
 
-  // Xác định header: #xinAds và #xinnghi thì hiện tên người gửi, nhóm khác thì ẩn danh
+  // Xác định header: #xinAds thì hiện tên người gửi, nhóm khác thì ẩn danh
   const tagLower = tag.toLowerCase();
-  const showSender = tagLower === "#xinads" || tagLower === "#xinnghi";
+  const showSender = tagLower === "#xinads";
   const senderName =
     `${ctx.from.first_name || ""} ${ctx.from.last_name || ""}`.trim();
   const senderUsername = ctx.from.username
