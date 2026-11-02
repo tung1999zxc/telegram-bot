@@ -65,7 +65,7 @@ const KHO_ALLOWED_USERNAMES = [
 ];
 
 // Chỉ 2 username này được dùng tag #giavn2
-const GIAVN2_ALLOWED_USERNAMES = ["@tranmyyhanh_1312", "@Tung9900"];
+const GIAVN2_ALLOWED_USERNAMES = ["@tranmyyhanh_1312", "@Tung9900","@nguyendiepanh1903"];
 
 function canUseTag(ctx, tag) {
   const tagLower = (tag || "").toLowerCase();
